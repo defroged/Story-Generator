@@ -1,5 +1,3 @@
-// api/generate-story.js
-
 import OpenAI from 'openai';
 import Busboy from 'busboy';
 
@@ -31,25 +29,17 @@ export default async function handler(req, res) {
     const base64Image = imageData.toString('base64');
     const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
-    // Create the messages array as per OpenAI's latest API
+    // Create the prompt for OpenAI API
     const messages = [
       {
         role: 'user',
-        content: [
-          { type: 'text', text: "Write a short children's story based on the content of this image." },
-          {
-            type: 'image',
-            image: {
-              url: dataUrl,
-            },
-          },
-        ],
+        content: `Write a short children's story based on this image: ${dataUrl}`,
       },
     ];
 
     // Call the OpenAI API
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Use the model that's working for you
+      model: 'gpt-4',
       messages: messages,
       max_tokens: 500,
       temperature: 0.7,
@@ -74,14 +64,16 @@ function getImageData(req) {
     let mimeType = null;
 
     bb.on('file', (fieldname, file, filename, encoding, mimetype) => {
-      const chunks = [];
-      mimeType = mimetype; // Capture the MIME type
-      file.on('data', (data) => {
-        chunks.push(data);
-      });
-      file.on('end', () => {
-        imageData = Buffer.concat(chunks);
-      });
+      if (fieldname === 'image') {  // Ensure we are processing the correct field
+        const chunks = [];
+        mimeType = mimetype;
+        file.on('data', (data) => {
+          chunks.push(data);
+        });
+        file.on('end', () => {
+          imageData = Buffer.concat(chunks);
+        });
+      }
     });
 
     bb.on('finish', () => {
