@@ -1,5 +1,7 @@
-const busboy = require('busboy');
-const { Configuration, OpenAIApi } = require('openai');
+// api/generate-story.js
+
+import Busboy from 'busboy'; // Adjusted import for ES Modules
+import { Configuration, OpenAIApi } from 'openai';
 
 export const config = {
   api: {
@@ -71,7 +73,7 @@ export default async function handler(req, res) {
 // Helper function to parse image data from the request
 function getImageData(req) {
   return new Promise((resolve, reject) => {
-    const bb = busboy({ headers: req.headers });
+    const bb = Busboy({ headers: req.headers });
     let imageData = null;
 
     bb.on('file', (fieldname, file, filename, encoding, mimetype) => {
