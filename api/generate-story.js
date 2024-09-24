@@ -32,8 +32,7 @@ export default async function handler(req, res) {
     role: "user",
     content: [
       { 
-        type: "text", 
-        text: `Write a short story based on the details found in the image of this page. When crafting the story, follow these guidelines:
+        type: "text", text: `Write a short story based on the details found in the image of this page. When crafting the story, follow these guidelines:
         
         1. **Vocabulary and Grammar**: 
            - Use as many words as possible from the vocabulary list on the left side of the page.
