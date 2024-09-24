@@ -35,7 +35,11 @@ function convertToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
+        reader.onload = () => {
+            // Remove the "data:image/png;base64," part to just get the raw base64 string
+            const base64String = reader.result.split(',')[1];
+            resolve(base64String);
+        };
         reader.onerror = (error) => reject(error);
     });
 }
@@ -45,9 +49,9 @@ async function generateStory(base64Image, mimeType) {
         const response = await fetch('/api/generate-story', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ base64Image, mimeType })
+            body: JSON.stringify({ base64Image, mimeType }),
         });
 
         if (!response.ok) {
