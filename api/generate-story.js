@@ -1,6 +1,7 @@
 // api/generate-story.js
 
-import { OpenAI } from 'openai';
+import OpenAI from 'openai';
+import Busboy from 'busboy';
 
 export const config = {
   api: {
@@ -20,7 +21,7 @@ export default async function handler(req, res) {
 
   try {
     // Parse the multipart form data
-    const imageData = await getImageData(req);
+    const { imageData, mimeType } = await getImageData(req);
     if (!imageData) {
       res.status(400).json({ error: 'Image file is required.' });
       return;
@@ -28,7 +29,7 @@ export default async function handler(req, res) {
 
     // Convert the image to base64 and create a data URL
     const base64Image = imageData.toString('base64');
-    const dataUrl = `data:image/jpeg;base64,${base64Image}`;
+    const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
     // Create the messages array as per OpenAI's latest API
     const messages = [
@@ -37,8 +38,8 @@ export default async function handler(req, res) {
         content: [
           { type: 'text', text: "Write a short children's story based on the content of this image." },
           {
-            type: 'image_url',
-            image_url: {
+            type: 'image',
+            image: {
               url: dataUrl,
             },
           },
@@ -48,7 +49,7 @@ export default async function handler(req, res) {
 
     // Call the OpenAI API
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o-mini', // Use the model that's working for you
       messages: messages,
       max_tokens: 500,
       temperature: 0.7,
@@ -58,57 +59,43 @@ export default async function handler(req, res) {
     res.status(200).json({ story });
   } catch (error) {
     console.error('OpenAI API Error:', error.response ? error.response.data : error.message);
-    res.status(500).json({ error: 'Failed to generate story.', details: error.message });
+    res.status(500).json({
+      error: 'Failed to generate story.',
+      details: error.response ? error.response.data : error.message,
+    });
   }
 }
 
-// Helper function to parse image data from the request
-async function getImageData(req) {
+// Helper function to parse image data and MIME type from the request
+function getImageData(req) {
   return new Promise((resolve, reject) => {
-    let imageData = Buffer.alloc(0);
-    let isImageFound = false;
+    const bb = Busboy({ headers: req.headers });
+    let imageData = null;
+    let mimeType = null;
 
-    req.on('data', (chunk) => {
-      imageData = Buffer.concat([imageData, chunk]);
+    bb.on('file', (fieldname, file, filename, encoding, mimetype) => {
+      const chunks = [];
+      mimeType = mimetype; // Capture the MIME type
+      file.on('data', (data) => {
+        chunks.push(data);
+      });
+      file.on('end', () => {
+        imageData = Buffer.concat(chunks);
+      });
     });
 
-    req.on('end', () => {
-      // Extract the image data from the multipart form data
-      const boundary = getBoundary(req.headers['content-type']);
-      if (!boundary) {
-        return reject(new Error('Invalid content-type header.'));
-      }
-
-      const parts = imageData.toString().split(boundary);
-      for (const part of parts) {
-        if (part.includes('Content-Disposition') && part.includes('name="image"')) {
-          const imageStart = part.indexOf('\r\n\r\n') + 4;
-          const imageEnd = part.lastIndexOf('\r\n');
-          const imageBuffer = Buffer.from(part.substring(imageStart, imageEnd), 'binary');
-          isImageFound = true;
-          return resolve(imageBuffer);
-        }
-      }
-
-      if (!isImageFound) {
+    bb.on('finish', () => {
+      if (imageData && mimeType) {
+        resolve({ imageData, mimeType });
+      } else {
         reject(new Error('Image file not found in the request.'));
       }
     });
 
-    req.on('error', (err) => {
+    bb.on('error', (err) => {
       reject(err);
     });
-  });
-}
 
-// Function to get the boundary from the content-type header
-function getBoundary(contentType) {
-  const items = contentType.split(';');
-  for (const item of items) {
-    const trimmedItem = item.trim();
-    if (trimmedItem.startsWith('boundary=')) {
-      return `--${trimmedItem.substring(9)}`;
-    }
-  }
-  return null;
+    req.pipe(bb);
+  });
 }
