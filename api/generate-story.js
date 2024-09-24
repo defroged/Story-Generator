@@ -28,17 +28,40 @@ export default async function handler(req, res) {
 
     // Prepare the OpenAI request
     const messages = [
+  {
+    role: "user",
+    content: [
+      { 
+        type: "text", 
+        text: `Write a short story based on the details found in the image of this page. When crafting the story, follow these guidelines:
+        
+        1. **Vocabulary and Grammar**: 
+           - Use as many words as possible from the vocabulary list on the left side of the page.
+           - Construct your sentences using only the grammar points listed on the left side. Avoid using any grammar that is more advanced than those provided.
+
+        2. **Word Limit**:
+           - Adjust the length of the story according to the level indicated on the left side of the page:
+             - For "Level 1 - Easy": Limit the story to 150 words or fewer.
+             - For "Level 2 - Medium": Write up to 250 words.
+             - For "Level 3 - Hard": Write no more than 400 words.
+
+        3. **Story Details**: 
+           - On the right side of the page, you'll find the student's ideas for the story, including the time, place, characters, and plot, under the headings “who,” “where,” “when,” and “other details.”
+           - If any of these fields are incomplete or missing, feel free to fill in the gaps creatively.
+
+        4. **Incorporating Visuals**: 
+           - In the bottom right section of the page, there is a drawing that represents the student’s concept of the setting or characters. Do your best to incorporate elements from this drawing into the story.
+
+        By following these instructions, create a story that remains true to the student’s ideas while staying within the limits of the vocabulary, grammar, and word count provided.`
+      },
       {
-        role: "user",
-        content: [
-          { type: "text", text: "Write a short children's story based on this image." },
-          {
-            type: "image_url",
-            image_url: { url: `data:${mimeType};base64,${base64Image}` },
-          }
-        ],
+        type: "image_url",
+        image_url: { url: `data:${mimeType};base64,${base64Image}` },
       }
-    ];
+    ],
+  }
+];
+
 
     // Send the request to OpenAI API
     const response = await openai.chat.completions.create({
