@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Parse the multipart form data
+    // Parse the multipart form data and get the image data
     const { imageData, mimeType } = await getImageData(req);
     
     if (!imageData) {
@@ -27,23 +27,27 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Convert the image to base64 and create a data URL
+    // Convert image data to base64
     const base64Image = imageData.toString('base64');
     const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
-    console.log("Image processed and converted to base64:", dataUrl); // Log the data URL
-
-    // Create the messages array as per OpenAI's latest API
+    // Create the prompt with the base64 encoded image
     const messages = [
       {
-        role: 'user',
-        content: `Write a short children's story based on this image: ${dataUrl}`,
-      },
+        role: "user",
+        content: [
+          { type: "text", text: "Write a short children's story based on this image." },
+          {
+            type: "image_url",
+            image_url: { url: dataUrl },
+          }
+        ],
+      }
     ];
 
-    // Call the OpenAI API
+    // Send the request to OpenAI
     const response = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o-mini', // Assuming you're using this model
       messages: messages,
       max_tokens: 500,
       temperature: 0.7,
@@ -68,19 +72,15 @@ function getImageData(req) {
     let mimeType = null;
 
     bb.on('file', (fieldname, file, filename, encoding, mimetype) => {
-      if (fieldname === 'image') {
+      if (fieldname === 'image') { // The fieldname must match the client-side FormData key
         const chunks = [];
-        mimeType = mimetype;
+        mimeType = mimetype; // Capture the MIME type (e.g., image/jpeg, image/png)
         file.on('data', (data) => {
-          console.log('Receiving data chunk'); // Log to see if data is being received
           chunks.push(data);
         });
         file.on('end', () => {
-          imageData = Buffer.concat(chunks);
-          console.log('File received, size:', imageData.length); // Log file size
+          imageData = Buffer.concat(chunks); // Buffer the image data
         });
-      } else {
-        console.log('Unexpected field:', fieldname); // Log any other unexpected fields
       }
     });
 
@@ -88,7 +88,6 @@ function getImageData(req) {
       if (imageData && mimeType) {
         resolve({ imageData, mimeType });
       } else {
-        console.error("Image data or MIME type not found");
         reject(new Error('Image file not found in the request.'));
       }
     });
