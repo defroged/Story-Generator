@@ -24,6 +24,9 @@
             padding: 10px 20px;
             font-size: 16px;
         }
+        #loading {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -31,10 +34,9 @@
     <button id="capture-btn">Take a Picture</button>
     <input type="file" id="upload-input" accept="image/*" capture="environment" style="display:none">
     <img id="preview" src="" alt="Image Preview">
+    <div id="loading"></div>
     <div id="story"></div>
 
-    <!-- Include Tesseract.js for OCR -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

@@ -2,6 +2,7 @@ const captureBtn = document.getElementById('capture-btn');
 const uploadInput = document.getElementById('upload-input');
 const preview = document.getElementById('preview');
 const storyDiv = document.getElementById('story');
+const loadingDiv = document.getElementById('loading');
 
 captureBtn.addEventListener('click', () => {
     uploadInput.click();
@@ -17,39 +18,27 @@ uploadInput.addEventListener('change', async () => {
         };
         reader.readAsDataURL(file);
 
-        // Perform OCR on the image
-        storyDiv.textContent = 'Processing image...';
-        const text = await extractTextFromImage(file);
+        // Display loading message
+        storyDiv.textContent = '';
+        loadingDiv.textContent = 'Generating story...';
 
-        // Send the extracted text to the server
-        const story = await generateStory(text);
+        // Send the image file to the server
+        const story = await generateStory(file);
+        loadingDiv.textContent = '';
         storyDiv.textContent = story;
     }
 });
 
-async function extractTextFromImage(imageFile) {
+async function generateStory(imageFile) {
     try {
-        const {
-            data: { text },
-        } = await Tesseract.recognize(imageFile, 'eng', {
-            logger: (m) => console.log(m),
-        });
-        return text;
-    } catch (error) {
-        console.error('OCR Error:', error);
-        return '';
-    }
-}
+        const formData = new FormData();
+        formData.append('image', imageFile);
 
-async function generateStory(promptText) {
-    try {
         const response = await fetch('/api/generate-story', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ prompt: promptText }),
+            body: formData,
         });
+
         const data = await response.json();
         return data.story || 'No story generated.';
     } catch (error) {
