@@ -40,9 +40,9 @@ export default async function handler(req, res) {
 
         2. **Word Limit**:
            - Adjust the length of the story according to the level indicated on the left side of the page:
-             - For "Level 1 - Easy": Limit the story to 150 words or fewer.
-             - For "Level 2 - Medium": Write up to 250 words.
-             - For "Level 3 - Hard": Write no more than 400 words.
+             - For "Level 1 - Easy": Limit the story to 150 words, but not less than 100.
+             - For "Level 2 - Medium": Write up to 250 words, but not less than 180.
+             - For "Level 3 - Hard": Write no more than 400 words, but not less than 300.
 
         3. **Story Details**: 
            - On the right side of the page, you'll find the student's ideas for the story, including the time, place, characters, and plot, under the headings “who,” “where,” “when,” and “other details.”
@@ -50,6 +50,17 @@ export default async function handler(req, res) {
 
         4. **Incorporating Visuals**: 
            - In the bottom right section of the page, there is a drawing that represents the student’s concept of the setting or characters. Do your best to incorporate elements from this drawing into the story.
+		   
+		5. **Following the story map**:
+		   - Write your story in a way that follows the following general outline: 
+		   a) Exposition
+		   b) Conflict
+		   c) Climax
+		   d) Resolution
+		   
+		
+		6. **Creating a title**:
+		   - After completing the story, think of an appropriate title for the story, and add it to your output.
 
         By following these instructions, create a story that remains true to the student’s ideas while staying within the limits of the vocabulary, grammar, and word count provided.`
       },
