@@ -32,8 +32,16 @@ uploadInput.addEventListener('change', async () => {
 async function generateStory(imageFile) {
   try {
     const formData = new FormData();
-    // Make sure the field name matches the one expected in the API (image)
+    
+    // Log to ensure file is present
+    console.log("File selected:", imageFile);
+
     formData.append('image', imageFile);
+
+    // Check what is appended in FormData
+    for (var pair of formData.entries()) {
+        console.log(pair[0] + ', ' + pair[1]);
+    }
 
     const response = await fetch('/api/generate-story', {
       method: 'POST',
@@ -52,5 +60,6 @@ async function generateStory(imageFile) {
     return 'An error occurred while generating the story.';
   }
 }
+
 
 

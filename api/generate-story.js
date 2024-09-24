@@ -20,7 +20,9 @@ export default async function handler(req, res) {
   try {
     // Parse the multipart form data
     const { imageData, mimeType } = await getImageData(req);
+    
     if (!imageData) {
+      console.error("No image data found!");
       res.status(400).json({ error: 'Image file is required.' });
       return;
     }
@@ -29,7 +31,9 @@ export default async function handler(req, res) {
     const base64Image = imageData.toString('base64');
     const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
-    // Create the prompt for OpenAI API
+    console.log("Image processed and converted to base64:", dataUrl); // Log the data URL
+
+    // Create the messages array as per OpenAI's latest API
     const messages = [
       {
         role: 'user',
@@ -64,15 +68,19 @@ function getImageData(req) {
     let mimeType = null;
 
     bb.on('file', (fieldname, file, filename, encoding, mimetype) => {
-      if (fieldname === 'image') {  // Ensure we are processing the correct field
+      if (fieldname === 'image') {
         const chunks = [];
         mimeType = mimetype;
         file.on('data', (data) => {
+          console.log('Receiving data chunk'); // Log to see if data is being received
           chunks.push(data);
         });
         file.on('end', () => {
           imageData = Buffer.concat(chunks);
+          console.log('File received, size:', imageData.length); // Log file size
         });
+      } else {
+        console.log('Unexpected field:', fieldname); // Log any other unexpected fields
       }
     });
 
@@ -80,6 +88,7 @@ function getImageData(req) {
       if (imageData && mimeType) {
         resolve({ imageData, mimeType });
       } else {
+        console.error("Image data or MIME type not found");
         reject(new Error('Image file not found in the request.'));
       }
     });
