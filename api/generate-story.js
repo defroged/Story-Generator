@@ -48,7 +48,7 @@ export default async function handler(req, res) {
 
     // Call the OpenAI API
     const response = await openai.chat.completions.create({
-      model: 'gpt-4-vision',
+      model: 'gpt-4o-mini',
       messages: messages,
       max_tokens: 500,
       temperature: 0.7,
