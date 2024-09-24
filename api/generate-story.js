@@ -1,19 +1,16 @@
 // api/generate-story.js
 
-import Busboy from 'busboy'; // Adjusted import for ES Modules
-import { Configuration, OpenAIApi } from 'openai';
+import { OpenAI } from 'openai';
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // Disable body parsing for file uploads
   },
 };
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-const openai = new OpenAIApi(configuration);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -29,71 +26,89 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Send the image to the OpenAI API
-    const response = await openai.createChatCompletion({
-      model: 'gpt-4-vision',
-      messages: [
-        {
-          role: 'user',
-          content: "Write a short children's story based on the content of this image.",
-        },
-      ],
-      functions: [
-        {
-          name: 'add_image',
-          description: 'Add an image to the prompt.',
-          parameters: {
-            type: 'object',
-            properties: {
-              image: {
-                type: 'string',
-                description: 'Base64-encoded image data.',
-              },
+    // Convert the image to base64 and create a data URL
+    const base64Image = imageData.toString('base64');
+    const dataUrl = `data:image/jpeg;base64,${base64Image}`;
+
+    // Create the messages array as per OpenAI's latest API
+    const messages = [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: "Write a short children's story based on the content of this image." },
+          {
+            type: 'image_url',
+            image_url: {
+              url: dataUrl,
             },
-            required: ['image'],
           },
-        },
-      ],
-      function_call: {
-        name: 'add_image',
-        arguments: JSON.stringify({
-          image: imageData.toString('base64'),
-        }),
+        ],
       },
+    ];
+
+    // Call the OpenAI API
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4-vision',
+      messages: messages,
+      max_tokens: 500,
+      temperature: 0.7,
     });
 
-    const story = response.data.choices[0].message.content.trim();
+    const story = response.choices[0].message.content.trim();
     res.status(200).json({ story });
   } catch (error) {
     console.error('OpenAI API Error:', error.response ? error.response.data : error.message);
-    res.status(500).json({ error: 'Failed to generate story.' });
+    res.status(500).json({ error: 'Failed to generate story.', details: error.message });
   }
 }
 
 // Helper function to parse image data from the request
-function getImageData(req) {
+async function getImageData(req) {
   return new Promise((resolve, reject) => {
-    const bb = Busboy({ headers: req.headers });
-    let imageData = null;
+    let imageData = Buffer.alloc(0);
+    let isImageFound = false;
 
-    bb.on('file', (fieldname, file, filename, encoding, mimetype) => {
-      const chunks = [];
-      file.on('data', (data) => {
-        chunks.push(data);
-      });
-      file.on('end', () => {
-        imageData = Buffer.concat(chunks);
-      });
+    req.on('data', (chunk) => {
+      imageData = Buffer.concat([imageData, chunk]);
     });
 
-    bb.on('finish', () => {
-      resolve(imageData);
+    req.on('end', () => {
+      // Extract the image data from the multipart form data
+      const boundary = getBoundary(req.headers['content-type']);
+      if (!boundary) {
+        return reject(new Error('Invalid content-type header.'));
+      }
+
+      const parts = imageData.toString().split(boundary);
+      for (const part of parts) {
+        if (part.includes('Content-Disposition') && part.includes('name="image"')) {
+          const imageStart = part.indexOf('\r\n\r\n') + 4;
+          const imageEnd = part.lastIndexOf('\r\n');
+          const imageBuffer = Buffer.from(part.substring(imageStart, imageEnd), 'binary');
+          isImageFound = true;
+          return resolve(imageBuffer);
+        }
+      }
+
+      if (!isImageFound) {
+        reject(new Error('Image file not found in the request.'));
+      }
     });
 
-    bb.on('error', (err) => {
+    req.on('error', (err) => {
       reject(err);
     });
-
-    req.pipe(bb);
   });
+}
+
+// Function to get the boundary from the content-type header
+function getBoundary(contentType) {
+  const items = contentType.split(';');
+  for (const item of items) {
+    const trimmedItem = item.trim();
+    if (trimmedItem.startsWith('boundary=')) {
+      return `--${trimmedItem.substring(9)}`;
+    }
+  }
+  return null;
 }

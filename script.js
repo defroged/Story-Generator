@@ -30,19 +30,25 @@ uploadInput.addEventListener('change', async () => {
 });
 
 async function generateStory(imageFile) {
-    try {
-        const formData = new FormData();
-        formData.append('image', imageFile);
+  try {
+    const formData = new FormData();
+    formData.append('image', imageFile);
 
-        const response = await fetch('/api/generate-story', {
-            method: 'POST',
-            body: formData,
-        });
+    const response = await fetch('/api/generate-story', {
+      method: 'POST',
+      body: formData,
+    });
 
-        const data = await response.json();
-        return data.story || 'No story generated.';
-    } catch (error) {
-        console.error('API Error:', error);
-        return 'An error occurred while generating the story.';
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Unknown error');
     }
+
+    const data = await response.json();
+    return data.story || 'No story generated.';
+  } catch (error) {
+    console.error('API Error:', error);
+    return 'An error occurred while generating the story.';
+  }
 }
+
