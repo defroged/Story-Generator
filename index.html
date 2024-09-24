@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Children's Story Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Basic styling for mobile view */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+        #preview {
+            width: 100%;
+            max-width: 300px;
+            margin-top: 20px;
+        }
+        #story {
+            margin-top: 20px;
+            text-align: left;
+        }
+        #capture-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Children's Story Generator</h1>
+    <button id="capture-btn">Take a Picture</button>
+    <input type="file" id="upload-input" accept="image/*" capture="environment" style="display:none">
+    <img id="preview" src="" alt="Image Preview">
+    <div id="story"></div>
+
+    <!-- Include Tesseract.js for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
