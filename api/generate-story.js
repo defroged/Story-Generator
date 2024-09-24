@@ -1,10 +1,10 @@
 // api/generate-story.js
 
-import { OpenAI } from 'openai';
+import OpenAI from 'openai';
 
 export const config = {
   api: {
-    bodyParser: false, // Disable body parsing for file uploads
+    bodyParser: false, // Disable built-in body parser to handle multipart form data
   },
 };
 
@@ -19,26 +19,37 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Parse the multipart form data
     const imageData = await getImageData(req);
     if (!imageData) {
       res.status(400).json({ error: 'Image file is required.' });
       return;
     }
 
-    // Convert the image to base64 and create a data URL
-    const base64Image = imageData.toString('base64');
-    const dataUrl = `data:image/jpeg;base64,${base64Image}`;
+    // Validate image format and size
+    const { buffer, mimeType } = imageData;
+    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mimeType)) {
+      res.status(400).json({ error: 'Unsupported image format. Please upload a JPEG, PNG, GIF, or WEBP image.' });
+      return;
+    }
 
-    // Create the messages array as per OpenAI's latest API
+    if (buffer.length > 20 * 1024 * 1024) { // 20 MB limit
+      res.status(400).json({ error: 'Image is too large. Please upload an image smaller than 20 MB.' });
+      return;
+    }
+
+    // Convert image buffer to base64 data URL
+    const base64Image = buffer.toString('base64');
+    const dataUrl = `data:${mimeType};base64,${base64Image}`;
+
+    // Construct the messages array
     const messages = [
       {
         role: 'user',
         content: [
           { type: 'text', text: "Write a short children's story based on the content of this image." },
           {
-            type: 'image_url',
-            image_url: {
+            type: 'image',
+            image: {
               url: dataUrl,
             },
           },
@@ -58,7 +69,10 @@ export default async function handler(req, res) {
     res.status(200).json({ story });
   } catch (error) {
     console.error('OpenAI API Error:', error.response ? error.response.data : error.message);
-    res.status(500).json({ error: 'Failed to generate story.', details: error.message });
+    res.status(500).json({
+      error: 'Failed to generate story.',
+      details: error.response ? error.response.data : error.message,
+    });
   }
 }
 
@@ -66,7 +80,8 @@ export default async function handler(req, res) {
 async function getImageData(req) {
   return new Promise((resolve, reject) => {
     let imageData = Buffer.alloc(0);
-    let isImageFound = false;
+    let mimeType = '';
+    let contentDisposition = '';
 
     req.on('data', (chunk) => {
       imageData = Buffer.concat([imageData, chunk]);
@@ -82,17 +97,21 @@ async function getImageData(req) {
       const parts = imageData.toString().split(boundary);
       for (const part of parts) {
         if (part.includes('Content-Disposition') && part.includes('name="image"')) {
+          // Get Content-Type
+          const mimeMatch = part.match(/Content-Type: (.+)/);
+          if (mimeMatch) {
+            mimeType = mimeMatch[1].trim();
+          }
+
           const imageStart = part.indexOf('\r\n\r\n') + 4;
-          const imageEnd = part.lastIndexOf('\r\n');
+          const imageEnd = part.lastIndexOf('\r\n--');
           const imageBuffer = Buffer.from(part.substring(imageStart, imageEnd), 'binary');
-          isImageFound = true;
-          return resolve(imageBuffer);
+
+          return resolve({ buffer: imageBuffer, mimeType });
         }
       }
 
-      if (!isImageFound) {
-        reject(new Error('Image file not found in the request.'));
-      }
+      reject(new Error('Image file not found in the request.'));
     });
 
     req.on('error', (err) => {
