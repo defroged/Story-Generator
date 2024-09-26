@@ -23,12 +23,18 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Decode base64 image
+    // Decode base64 image into a buffer
     const imageBuffer = Buffer.from(base64Image, 'base64');
+
+    // Ensure the image is not too large
+    if (imageBuffer.length > 4 * 1024 * 1024) {  // 4MB is a reasonable limit
+      return res.status(400).json({ error: 'Image size exceeds 4MB limit.' });
+    }
 
     // Prepare form data for the GPT-4o-mini API request
     const formData = new FormData();
     formData.append('model', 'gpt-4o-mini');
+    
     formData.append(
       'messages',
       JSON.stringify([
@@ -65,20 +71,18 @@ export default async function handler(req, res) {
 
 By following these instructions, create a story that remains true to the student’s ideas while staying within the limits of the vocabulary, grammar, and word count provided.`,
         },
-        {
-          role: 'user',
-          content: '', // Placeholder should be updated
-        },
       ])
     );
+    
+    // Append image to form data with proper contentType
     formData.append('file', imageBuffer, {
       filename: 'image.png',
       contentType: mimeType,
     });
 
-    // Make the API request to OpenAI's GPT-4o-mini Vision
+    // Send API request to OpenAI with the form data
     const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
+      'https://api.openai.com/v1/chat/completions',  // Ensure this is the correct endpoint
       formData,
       {
         headers: {
@@ -94,7 +98,7 @@ By following these instructions, create a story that remains true to the student
       throw new Error('Story generation failed.');
     }
 
-    // Generate a concise prompt for DALL·E 3 based on the story
+    // Generate prompt for DALL·E 3 based on the story
     const promptResponse = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
