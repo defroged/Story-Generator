@@ -26,8 +26,8 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Generate the story based on the uploaded image (keep your existing code)
-    const response = await openai.chat.completions.create({
+    // Step 1: Generate the story based on the uploaded image
+    const storyResponse = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: [
         {
@@ -83,17 +83,44 @@ By following these instructions, create a story that remains true to the student
       temperature: 0.7,
     });
 
-    const story = response.choices[0].message.content.trim();
+    const story = storyResponse.choices[0].message.content.trim();
 
-    // Now, generate an image based on the story using DALL·E 3
+    // Step 2: Generate a concise prompt for DALL·E 3 based on the story
+    const promptResponse = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful assistant that creates prompts for image generation.',
+        },
+        {
+          role: 'user',
+          content: `Please create a detailed, vivid description suitable for generating an image based on the following story. The description should be less than 1000 characters.
+
+Story:
+${story}`,
+        },
+      ],
+      max_tokens: 150,
+      temperature: 0.7,
+    });
+
+    let prompt = promptResponse.choices[0].message.content.trim();
+
+    // Ensure the prompt is less than 1000 characters
+    if (prompt.length > 1000) {
+      prompt = prompt.substring(0, 999);
+    }
+
+    // Step 3: Generate an image based on the prompt using DALL·E 3
     const imageResponse = await openai.images.generate({
-      prompt: story,
+      prompt: prompt,
       n: 1,
       size: '1024x1024',
       // quality: 'standard', // Optional: 'standard' or 'hd'
     });
 
-    const imageUrl = imageResponse.data.data[0].url;
+    const imageUrl = imageResponse.data[0].url;
 
     res.status(200).json({ story, imageUrl });
   } catch (error) {
