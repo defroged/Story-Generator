@@ -11,3 +11,5 @@ script for Azure voice:
 
 
 I would like you to help me change the output from the OpenAI generated story to print ready document.
+
+increased timeout
