@@ -135,21 +135,13 @@ ${story}`,
       throw new Error('The generated prompt contains disallowed content.');
     }
 
-    // Generate an image based on the prompt using DALL·E 3
-    const imageResponse = await axios.post(
-      'https://api.openai.com/v1/images/generations',
-      {
-        prompt: prompt,
-        n: 1,
-        size: '1024x1024',
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-      }
-    );
+    // Generate an image using DALL-E 3 based on the story
+    const imageResponse = await openai.images.generate({
+      model: "dall-e-3",  // Use DALL-E 3 model
+      prompt: story,       // Use the generated story as the prompt
+      n: 1,
+      size: "1024x1024",
+    });
 
     const imageUrl = imageResponse.data.data[0].url;
 
