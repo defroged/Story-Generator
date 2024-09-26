@@ -1,11 +1,15 @@
+import OpenAI from 'openai';
 import axios from 'axios';
-import FormData from 'form-data';
 
 export const config = {
   api: {
-    bodyParser: true,
+    bodyParser: true, // Enable body parsing for JSON data
   },
 };
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -18,29 +22,19 @@ export default async function handler(req, res) {
     const { base64Image, mimeType } = req.body;
 
     if (!base64Image || !mimeType) {
-      console.error('No base64 image data or MIME type found!');
+      console.error("No base64 image data or MIME type found!");
       res.status(400).json({ error: 'Image file and MIME type are required.' });
       return;
     }
 
-    // Decode base64 image into a buffer
-    const imageBuffer = Buffer.from(base64Image, 'base64');
-
-    // Ensure the image is not too large
-    if (imageBuffer.length > 4 * 1024 * 1024) {  // 4MB is a reasonable limit
-      return res.status(400).json({ error: 'Image size exceeds 4MB limit.' });
-    }
-
-    // Prepare form data for the GPT-4o-mini API request
-    const formData = new FormData();
-    formData.append('model', 'gpt-4o-mini');
-    
-    formData.append(
-      'messages',
-      JSON.stringify([
-        {
-          role: 'user',
-          content: `Write a short story based on the details found in the image. Follow these guidelines:
+    // Prepare the OpenAI request for story generation
+    const messages = [
+      {
+        role: "user",
+        content: [
+          { 
+            type: "text", 
+            text: `Write a short story based on the details found in the image of this page. Follow these guidelines:
 
 1. **Vocabulary and Grammar**: 
    - Use as many words as possible from the vocabulary list on the left side of the page.
@@ -48,8 +42,8 @@ export default async function handler(req, res) {
 
 2. **Word Limit**:
    - Adjust the length of the story according to the level indicated on the left side of the page:
-     - For "Level 1 - Easy": Limit the story to 150 words, but not less than 100. Use very simple English aimed at young ESL learners.
-     - For "Level 2 - Medium": Write up to 250 words, but not less than 180. Use very simple English aimed at young ESL learners.
+     - For "Level 1 - Easy": Limit the story to 150 words, but not less than 100. Use very simple English aimed at young esl learners.
+     - For "Level 2 - Medium": Write up to 250 words, but not less than 180. Use very simple English aimed at young esl learners.
      - For "Level 3 - Hard": Write no more than 400 words, but not less than 300. Use simple English aimed at young ESL learners.
 
 3. **Story Details**: 
@@ -65,69 +59,54 @@ export default async function handler(req, res) {
      b) Conflict
      c) Climax
      d) Resolution
-     
-6. **Creating a title**:
-   - After completing the story, think of an appropriate title for the story, and add it to your output.
 
-By following these instructions, create a story that remains true to the student’s ideas while staying within the limits of the vocabulary, grammar, and word count provided.`,
-        },
-      ])
-    );
-    
-    // Append image to form data with proper contentType
-    formData.append('file', imageBuffer, {
-      filename: 'image.png',
-      contentType: mimeType,
+6. **Creating a title**:
+   - After completing the story, think of an appropriate title for the story, and add it to your output.`
+          },
+          {
+            type: "image_url",
+            image_url: { url: `data:${mimeType};base64,${base64Image}` },
+          }
+        ],
+      }
+    ];
+
+    // Send the request to OpenAI API for story generation
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini', 
+      messages: messages,
+      max_tokens: 500,
+      temperature: 0.7,
     });
 
-    // Send API request to OpenAI with the form data
-    const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',  // Ensure this is the correct endpoint
-      formData,
-      {
-        headers: {
-          ...formData.getHeaders(),
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-      }
-    );
+    const story = response.choices[0].message.content.trim();
 
-    const story = response.data.choices[0].message.content.trim();
-
+    // If the story generation failed, throw an error
     if (!story) {
       throw new Error('Story generation failed.');
     }
 
-    // Generate prompt for DALL·E 3 based on the story
-    const promptResponse = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful assistant that creates prompts for image generation.',
-          },
-          {
-            role: 'user',
-            content: `Based on the following story, create a detailed and vivid description suitable for generating an image. Focus on positive, family-friendly elements, and avoid any disallowed content. The description should be less than 1000 characters.
+    // Generate a concise prompt for DALL·E 3 based on the story
+    const promptResponse = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful assistant that creates prompts for image generation.',
+        },
+        {
+          role: 'user',
+          content: `Based on the following story, create a detailed and vivid description suitable for generating an image. Focus on positive, family-friendly elements, and avoid any disallowed content. The description should be less than 1000 characters.
 
 Story:
 ${story}`,
-          },
-        ],
-        max_tokens: 150,
-        temperature: 0.7,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         },
-      }
-    );
+      ],
+      max_tokens: 150,
+      temperature: 0.7,
+    });
 
-    let prompt = promptResponse.data.choices[0].message.content.trim();
+    let prompt = promptResponse.choices[0].message.content.trim();
 
     if (!prompt) {
       throw new Error('Prompt generation failed.');
@@ -138,7 +117,7 @@ ${story}`,
       prompt = prompt.substring(0, 1000);
     }
 
-    // Check the prompt with the Moderation API
+    // Check the prompt with the Moderation API (optional)
     const moderationResponse = await axios.post(
       'https://api.openai.com/v1/moderations',
       { input: prompt },
@@ -178,15 +157,13 @@ ${story}`,
       throw new Error('Image generation failed.');
     }
 
+    // Send the story and image URL back to the client
     res.status(200).json({ story, imageUrl });
   } catch (error) {
-    console.error(
-      'OpenAI API Error:',
-      error.response?.data || error.message
-    );
+    console.error('OpenAI API Error:', error.response ? error.response.data : error.message);
     res.status(500).json({
       error: 'Failed to generate story or image.',
-      details: error.response?.data || error.message,
+      details: error.response ? error.response.data : error.message,
     });
   }
 }
