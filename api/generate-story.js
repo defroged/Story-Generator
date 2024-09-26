@@ -26,9 +26,9 @@ export default async function handler(req, res) {
     // Decode base64 image
     const imageBuffer = Buffer.from(base64Image, 'base64');
 
-    // Prepare form data for the GPT-4 Vision API request
+    // Prepare form data for the GPT-4o-mini API request
     const formData = new FormData();
-    formData.append('model', 'gpt-4');
+    formData.append('model', 'gpt-4o-mini');
     formData.append(
       'messages',
       JSON.stringify([
@@ -67,7 +67,7 @@ By following these instructions, create a story that remains true to the student
         },
         {
           role: 'user',
-          content: '', // Placeholder for the image
+          content: '', // Placeholder should be updated
         },
       ])
     );
@@ -76,7 +76,7 @@ By following these instructions, create a story that remains true to the student
       contentType: mimeType,
     });
 
-    // Make the API request to OpenAI's GPT-4 Vision
+    // Make the API request to OpenAI's GPT-4o-mini Vision
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       formData,
