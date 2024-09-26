@@ -40,9 +40,9 @@ export default async function handler(req, res) {
 
         2. **Word Limit**:
            - Adjust the length of the story according to the level indicated on the left side of the page:
-             - For "Level 1 - Easy": Limit the story to 150 words, but not less than 100.
-             - For "Level 2 - Medium": Write up to 250 words, but not less than 180.
-             - For "Level 3 - Hard": Write no more than 400 words, but not less than 300.
+             - For "Level 1 - Easy": Limit the story to 150 words, but not less than 100. Use very simple English aimed at young esl learners.
+             - For "Level 2 - Medium": Write up to 250 words, but not less than 180. Use very simple English aimed at young esl learners.
+             - For "Level 3 - Hard": Write no more than 400 words, but not less than 300. Use simple English aimed at young ESL learners.
 
         3. **Story Details**: 
            - On the right side of the page, you'll find the student's ideas for the story, including the time, place, characters, and plot, under the headings “who,” “where,” “when,” and “other details.”
