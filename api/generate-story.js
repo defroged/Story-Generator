@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 
 export const config = {
   api: {
-    bodyParser: true, // Enable body parsing for JSON data
+    bodyParser: true, 
   },
 };
 
