@@ -19,14 +19,28 @@ uploadInput.addEventListener('change', async () => {
         reader.readAsDataURL(file);
 
         // Display loading message
-        storyDiv.textContent = '';
-        loadingDiv.textContent = 'Generating story...';
+        storyDiv.innerHTML = '';
+        loadingDiv.textContent = 'Generating story and image...';
 
         // Convert the image to base64 and send it to the server
         const base64Image = await convertToBase64(file);
-        const story = await generateStory(base64Image, file.type);
+        const result = await generateStory(base64Image, file.type);
         loadingDiv.textContent = '';
-        storyDiv.textContent = story;
+
+        // Display the story
+        const storyParagraph = document.createElement('p');
+        storyParagraph.textContent = result.story || 'No story generated.';
+        storyDiv.appendChild(storyParagraph);
+
+        // Display the generated image
+        if (result.imageUrl) {
+            const generatedImage = document.createElement('img');
+            generatedImage.src = result.imageUrl;
+            generatedImage.alt = 'Generated Image';
+            generatedImage.style.maxWidth = '100%';
+            generatedImage.style.marginTop = '20px';
+            storyDiv.appendChild(generatedImage);
+        }
     }
 });
 
@@ -60,9 +74,9 @@ async function generateStory(base64Image, mimeType) {
         }
 
         const data = await response.json();
-        return data.story || 'No story generated.';
+        return data; // Return both story and imageUrl
     } catch (error) {
         console.error('API Error:', error);
-        return 'An error occurred while generating the story.';
+        return { story: 'An error occurred while generating the story.', imageUrl: null };
     }
 }

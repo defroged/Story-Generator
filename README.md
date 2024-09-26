@@ -8,3 +8,6 @@ script for Azure voice:
         </mstts:express-as>
     </voice>
 </speak>
+
+
+I would like you to help me change the output from the OpenAI generated story to print ready document.
