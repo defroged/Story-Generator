@@ -1,9 +1,8 @@
 import OpenAI from 'openai';
-import axios from 'axios';
 
 export const config = {
   api: {
-    bodyParser: true, 
+    bodyParser: true,
   },
 };
 
@@ -22,7 +21,7 @@ export default async function handler(req, res) {
     const { base64Image, mimeType } = req.body;
 
     if (!base64Image || !mimeType) {
-      console.error("No base64 image data or MIME type found!");
+      console.error('No base64 image data or MIME type found!');
       res.status(400).json({ error: 'Image file and MIME type are required.' });
       return;
     }
@@ -32,7 +31,7 @@ export default async function handler(req, res) {
       model: 'gpt-4',
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: `Write a short story based on the details found in the image. Follow these guidelines:
 
 1. **Vocabulary and Grammar**: 
@@ -62,19 +61,19 @@ export default async function handler(req, res) {
 6. **Creating a title**:
    - After completing the story, think of an appropriate title for the story, and add it to your output.
 
-By following these instructions, create a story that remains true to the student’s ideas while staying within the limits of the vocabulary, grammar, and word count provided.`
+By following these instructions, create a story that remains true to the student’s ideas while staying within the limits of the vocabulary, grammar, and word count provided.`,
         },
         {
-          role: "system",
+          role: 'system',
           content: `The image is attached below.`,
         },
         {
-          role: "user",
-          content: "",
-          name: "image",
+          role: 'user',
+          content: '',
+          name: 'image',
           attachments: [
             {
-              type: "image",
+              type: 'image',
               data: base64Image,
             },
           ],
@@ -87,28 +86,21 @@ By following these instructions, create a story that remains true to the student
     const story = response.choices[0].message.content.trim();
 
     // Now, generate an image based on the story using DALL·E 3
-    const imageResponse = await axios.post(
-      'https://api.openai.com/v1/images/generations',
-      {
-        prompt: story,
-        n: 1,
-        size: '1024x1024',
-        model: 'image-alpha-001', // For DALL·E 3
-        // quality: 'hd', // Uncomment if you want HD quality
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-      }
-    );
+    const imageResponse = await openai.images.generate({
+      prompt: story,
+      n: 1,
+      size: '1024x1024',
+      // quality: 'standard', // Optional: 'standard' or 'hd'
+    });
 
     const imageUrl = imageResponse.data.data[0].url;
 
     res.status(200).json({ story, imageUrl });
   } catch (error) {
-    console.error('OpenAI API Error:', error.response ? error.response.data : error.message);
+    console.error(
+      'OpenAI API Error:',
+      error.response ? error.response.data : error.message
+    );
     res.status(500).json({
       error: 'Failed to generate story or image.',
       details: error.response ? error.response.data : error.message,
