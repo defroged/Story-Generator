@@ -1,6 +1,5 @@
 const captureBtn = document.getElementById('capture-btn');
 const uploadInput = document.getElementById('upload-input');
-const preview = document.getElementById('preview');
 const storyDiv = document.getElementById('story');
 const loadingDiv = document.getElementById('loading');
 
@@ -11,35 +10,36 @@ captureBtn.addEventListener('click', () => {
 uploadInput.addEventListener('change', async () => {
     const file = uploadInput.files[0];
     if (file) {
-        // Display the image preview
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            preview.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-
         // Display loading message
         storyDiv.innerHTML = '';
         loadingDiv.textContent = 'Generating story and image...';
 
-        // Convert the image to base64 and send it to the server
-        const base64Image = await convertToBase64(file);
-        const result = await generateStory(base64Image, file.type);
-        loadingDiv.textContent = '';
+        try {
+            // Convert the image to base64 and send it to the server
+            const base64Image = await convertToBase64(file);
+            const result = await generateStory(base64Image, file.type);
+            loadingDiv.textContent = '';
 
-        // Display the story
-        const storyParagraph = document.createElement('p');
-        storyParagraph.textContent = result.story || 'No story generated.';
-        storyDiv.appendChild(storyParagraph);
+            // Display the story
+            const storyParagraph = document.createElement('p');
+            storyParagraph.textContent = result.story || 'No story generated.';
+            storyDiv.appendChild(storyParagraph);
 
-        // Display the generated image
-        if (result.imageUrl) {
-            const generatedImage = document.createElement('img');
-            generatedImage.src = result.imageUrl;
-            generatedImage.alt = 'Generated Image';
-            generatedImage.style.maxWidth = '100%';
-            generatedImage.style.marginTop = '20px';
-            storyDiv.appendChild(generatedImage);
+            // Display the generated image if available
+            if (result.imageUrl) {
+                const generatedImage = document.createElement('img');
+                generatedImage.src = result.imageUrl;
+                generatedImage.alt = 'Generated Image';
+                generatedImage.style.maxWidth = '100%';
+                generatedImage.style.marginTop = '20px';
+                storyDiv.appendChild(generatedImage);
+            }
+        } catch (error) {
+            loadingDiv.textContent = '';
+            const errorParagraph = document.createElement('p');
+            errorParagraph.textContent = 'Failed to generate story and image.';
+            storyDiv.appendChild(errorParagraph);
+            console.error('Error:', error);
         }
     }
 });
