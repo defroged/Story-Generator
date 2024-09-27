@@ -23,12 +23,34 @@
             margin: 20px auto 0;
             max-width: 100%;
         }
-        #capture-btn {
+        #capture-btn, #print-btn {
             padding: 10px 20px;
             font-size: 16px;
+            margin-top: 20px;
+            cursor: pointer;
         }
         #loading {
             margin-top: 20px;
+        }
+
+        /* Print-specific styles */
+        @media print {
+            @page {
+                size: A4;
+                margin: 20mm;
+            }
+            body {
+                font-size: 12pt;
+                text-align: left;
+            }
+            /* Hide buttons and other non-essential elements */
+            #capture-btn, #upload-input, #print-btn, #loading {
+                display: none;
+            }
+            #story img {
+                max-width: 100%;
+                height: auto;
+            }
         }
     </style>
 </head>

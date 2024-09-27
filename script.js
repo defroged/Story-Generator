@@ -1,3 +1,5 @@
+// script.js
+
 const captureBtn = document.getElementById('capture-btn');
 const uploadInput = document.getElementById('upload-input');
 
@@ -35,6 +37,17 @@ uploadInput.addEventListener('change', async () => {
                 generatedImage.style.marginTop = '20px';
                 storyDiv.appendChild(generatedImage);
             }
+
+            // Create and append the Print button
+            const printButton = document.createElement('button');
+            printButton.textContent = 'Print';
+            printButton.id = 'print-btn';
+            printButton.style.marginTop = '20px';
+            printButton.addEventListener('click', () => {
+                window.print();
+            });
+            storyDiv.appendChild(printButton);
+
         } catch (error) {
             loadingDiv.textContent = '';
             const errorParagraph = document.createElement('p');
