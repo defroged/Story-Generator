@@ -1,5 +1,6 @@
 const captureBtn = document.getElementById('capture-btn');
 const uploadInput = document.getElementById('upload-input');
+
 const storyDiv = document.getElementById('story');
 const loadingDiv = document.getElementById('loading');
 
