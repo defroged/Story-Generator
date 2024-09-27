@@ -32,8 +32,8 @@ export default async function handler(req, res) {
       {
         role: "user",
         content: [
-          {
-            type: "text",
+          { 
+            type: "text", 
             text: `Write a short story based on the details found in the image of this page. Follow these guidelines:
 
 1. **Vocabulary and Grammar**: 
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
 
     // Send the request to OpenAI API for story generation
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o-mini', 
       messages: messages,
       max_tokens: 500,
       temperature: 0.7,
@@ -81,6 +81,7 @@ export default async function handler(req, res) {
 
     const story = response.choices[0].message.content.trim();
 
+    // If the story generation failed, throw an error
     if (!story) {
       throw new Error('Story generation failed.');
     }
@@ -116,12 +117,30 @@ ${story}`,
       prompt = prompt.substring(0, 1000);
     }
 
+    // Check the prompt with the Moderation API (optional)
+    const moderationResponse = await axios.post(
+      'https://api.openai.com/v1/moderations',
+      { input: prompt },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+      }
+    );
+
+    const moderationResult = moderationResponse.data.results[0];
+
+    if (moderationResult.flagged) {
+      throw new Error('The generated prompt contains disallowed content.');
+    }
+
     // Generate an image based on the prompt using DALL·E 3
     const imageResponse = await axios.post(
       'https://api.openai.com/v1/images/generations',
       {
         prompt: prompt,
-        model: 'dall-e-3',
+		model: 'dall-e-3', 
         n: 1,
         size: '1024x1024',
       },
@@ -139,48 +158,8 @@ ${story}`,
       throw new Error('Image generation failed.');
     }
 
-    // Build HTML content for printing
-    const printHTML = `
-      <html>
-      <head>
-        <title>Print Story</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-          }
-          .story-title {
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 20px;
-          }
-          .story-content {
-            font-size: 16px;
-            line-height: 1.6;
-          }
-          .story-image {
-            text-align: center;
-            margin-top: 20px;
-          }
-          .story-image img {
-            max-width: 100%;
-            height: auto;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="story-title">Your Generated Story</div>
-        <div class="story-content">${story}</div>
-        <div class="story-image">
-          <img src="${imageUrl}" alt="Generated Image">
-        </div>
-      </body>
-      </html>
-    `;
-
-    // Send the HTML response back for the client to print
-    res.status(200).json({ printHTML });
+    // Send the story and image URL back to the client
+    res.status(200).json({ story, imageUrl });
   } catch (error) {
     console.error('OpenAI API Error:', error.response ? error.response.data : error.message);
     res.status(500).json({
