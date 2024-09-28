@@ -34,7 +34,8 @@ export default async function handler(req, res) {
         content: [
           { 
             type: "text", 
-            text: `Write a short story based on the details found in the image of this page. Follow these guidelines:
+            text: `Write a short story based on the details found in the image of this page. Your output should be in HTML.
+			Follow these guidelines for writing the story:
 
 1. **Vocabulary and Grammar**: 
    - Use as many words as possible from the vocabulary list on the left side of the page.
