@@ -62,7 +62,7 @@ export default async function handler(req, res) {
      d) Resolution
 
 6. **Creating a title**:
-   - After completing the story, think of an appropriate title for the story, and add it to your output.`
+   - After completing the story, think of an appropriate title for the story, and add it to your output as <title>.`
           },
           {
             type: "image_url",

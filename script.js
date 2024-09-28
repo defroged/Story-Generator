@@ -23,10 +23,8 @@ uploadInput.addEventListener('change', async () => {
             const result = await generateStory(base64Image, file.type);
             loadingDiv.textContent = '';
 
-            // Display the story
-            const storyParagraph = document.createElement('p');
-            storyParagraph.textContent = result.story || 'No story generated.';
-            storyDiv.appendChild(storyParagraph);
+            // Display the story with HTML content
+            storyDiv.innerHTML = result.story || '<p>No story generated.</p>';
 
             // Display the generated image if available
             if (result.imageUrl) {
