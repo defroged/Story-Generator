@@ -208,7 +208,7 @@ async function generateAudioNarration(text) {
       let ssml = `
         <speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="de-DE">
           <voice name="de-DE-SeraphinaMultilingualNeural">
-            <prosody rate="-20.00%">`;
+            <prosody rate="-20.00%" pitch="-10.00%">`;
       
       // Regex to find parts of the text that are inside and outside of quotes
       const parts = inputText.split(/(".*?")/g);
@@ -220,7 +220,7 @@ async function generateAudioNarration(text) {
             </prosody>
             </voice>
             <voice name="de-DE-FlorianMultilingualNeural">
-              <prosody rate="-20.00%">
+              <prosody rate="-20.00%" pitch="-10.00%">
               ${part}
             </prosody>
             </voice>
