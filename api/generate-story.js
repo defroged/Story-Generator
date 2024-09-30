@@ -225,7 +225,7 @@ async function generateAudioNarration(text) {
             </prosody>
             </voice>
             <voice name="de-DE-SeraphinaMultilingualNeural">
-              <prosody rate="-20.00%">`;
+              <prosody rate="-20.00%" pitch="-10.00%">`;
         } else {
           // Text outside quotation marks -> Use the first voice with prosody
           ssml += `${part}`;
