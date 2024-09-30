@@ -1,7 +1,11 @@
+// Import necessary modules
 import OpenAI from 'openai';
 import axios from 'axios';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import { BlobServiceClient } from '@azure/storage-blob';
+
+// Import the html-to-text package to convert HTML to plain text
+import { htmlToText } from 'html-to-text';
 
 export const config = {
   api: {
@@ -24,20 +28,22 @@ export default async function handler(req, res) {
     const { base64Image, mimeType } = req.body;
 
     if (!base64Image || !mimeType) {
-      console.error("No base64 image data or MIME type found!");
-      res.status(400).json({ error: 'Image file and MIME type are required.' });
+      console.error('No base64 image data or MIME type found!');
+      res
+        .status(400)
+        .json({ error: 'Image file and MIME type are required.' });
       return;
     }
 
     // Prepare the OpenAI request for story generation
     const messages = [
       {
-        role: "user",
+        role: 'user',
         content: [
-          { 
-            type: "text", 
+          {
+            type: 'text',
             text: `Write a short story based on the details found in the image of this page. Please generate the story in HTML. Provide only the HTML code without any Markdown formatting or code block delimiters.
-			Follow these guidelines for writing the story:
+    Follow these guidelines for writing the story:
 
 1. **Vocabulary and Grammar**: 
    - Use as many words as possible from the vocabulary list on the left side of the page.
@@ -64,30 +70,38 @@ export default async function handler(req, res) {
      d) Resolution
 
 6. **Creating a title**:
-   - After completing the story, think of an appropriate title for the story, and add it to your output as <title>.`
+   - After completing the story, think of an appropriate title for the story, and add it to your output as <title>.`,
           },
           {
-            type: "image_url",
+            type: 'image_url',
             image_url: { url: `data:${mimeType};base64,${base64Image}` },
-          }
+          },
         ],
-      }
+      },
     ];
 
     // Send the request to OpenAI API for story generation
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', 
+      model: 'gpt-4o-mini',
       messages: messages,
       max_tokens: 500,
       temperature: 0.7,
     });
 
-    const story = response.choices[0].message.content.trim();
+    // Get the story in HTML format
+    const storyHtml = response.choices[0].message.content.trim();
 
     // If the story generation failed, throw an error
-    if (!story) {
+    if (!storyHtml) {
       throw new Error('Story generation failed.');
     }
+
+    // **NEW ADDITION STARTS HERE**
+    // Convert HTML to plain text for audio narration
+    const storyText = htmlToText(storyHtml, {
+      wordwrap: false,
+    });
+    // **NEW ADDITION ENDS HERE**
 
     // Generate a concise prompt for DALL·E 3 based on the story
     const promptResponse = await openai.chat.completions.create({
@@ -95,14 +109,15 @@ export default async function handler(req, res) {
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful assistant that creates prompts for image generation.',
+          content:
+            'You are a helpful assistant that creates prompts for image generation.',
         },
         {
           role: 'user',
           content: `Based on the following story, create a detailed and vivid description suitable for generating an image. Focus on positive, family-friendly elements, and avoid any disallowed content. The description should be less than 1000 characters.
 
 Story:
-${story}`,
+${storyText}`, // Use plain text version of the story
         },
       ],
       max_tokens: 150,
@@ -143,7 +158,7 @@ ${story}`,
       'https://api.openai.com/v1/images/generations',
       {
         prompt: prompt,
-		model: 'dall-e-3', 
+        model: 'dall-e-3',
         n: 1,
         size: '1024x1024',
       },
@@ -161,13 +176,17 @@ ${story}`,
       throw new Error('Image generation failed.');
     }
 
-// Generate audio narration for the story
-    const audioUrl = await generateAudioNarration(story);
+    // **MODIFIED HERE**
+    // Generate audio narration for the story using plain text
+    const audioUrl = await generateAudioNarration(storyText);
 
-    // Send the story, image URL, and audio URL back to the client
-    res.status(200).json({ story, imageUrl, audioUrl });
+    // Send the story (HTML), image URL, and audio URL back to the client
+    res.status(200).json({ story: storyHtml, imageUrl, audioUrl });
   } catch (error) {
-    console.error('Error:', error.response ? error.response.data : error.message);
+    console.error(
+      'Error:',
+      error.response ? error.response.data : error.message
+    );
     res.status(500).json({
       error: 'Failed to generate story, image, or audio narration.',
       details: error.response ? error.response.data : error.message,
@@ -182,7 +201,8 @@ async function generateAudioNarration(text) {
       process.env.AZURE_SPEECH_KEY,
       process.env.AZURE_SPEECH_REGION
     );
-    speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
+    speechConfig.speechSynthesisOutputFormat =
+      sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
 
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
 
@@ -228,7 +248,7 @@ async function uploadAudioToStorage(audioBuffer) {
     blobHTTPHeaders: { blobContentType: 'audio/mpeg' },
   });
 
-  // Generate a SAS token for the blob to make it accessible
+  // Generate the URL of the uploaded audio file
   const audioUrl = blockBlobClient.url; // If the container is public
   // If the container is private, generate a SAS token or use another method to provide access
 
