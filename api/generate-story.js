@@ -82,7 +82,7 @@ export default async function handler(req, res) {
 
     // Send the request to OpenAI API for story generation
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: messages,
       max_tokens: 500,
       temperature: 0.7,
@@ -103,7 +103,7 @@ export default async function handler(req, res) {
 
     // Generate a concise prompt for DALL·E 3 based on the story
     const promptResponse = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [
         {
           role: 'system',
