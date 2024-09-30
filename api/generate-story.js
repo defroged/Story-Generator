@@ -200,20 +200,49 @@ async function generateAudioNarration(text) {
       process.env.AZURE_SPEECH_REGION
     );
 
-    // Set output format to MP3
+    // Set the speech synthesis output format to MP3
     speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
 
-    // SSML for voice configuration (adjust speed and pitch as needed)
-    const ssml = `
-      <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="en-US">
-        <voice name="en-US-AriaNeural">
-          <prosody rate="-15%" pitch="+1%"> ${text} </prosody>
-        </voice>
-      </speak>`;
+    // Function to construct SSML with different voices based on quotation marks
+    const constructSSML = (inputText) => {
+      let ssml = `
+        <speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="de-DE">
+          <voice name="de-DE-SeraphinaMultilingualNeural">
+            <prosody rate="-20.00%">`;
+      
+      // Regex to find parts of the text that are inside and outside of quotes
+      const parts = inputText.split(/(".*?")/g);
+
+      parts.forEach((part) => {
+        if (part.startsWith('"') && part.endsWith('"')) {
+          // Text inside quotation marks -> Use the second voice
+          ssml += `
+            </prosody>
+            </voice>
+            <voice name="de-DE-FlorianMultilingualNeural">
+              <prosody rate="-20.00%">
+              ${part}
+            </prosody>
+            </voice>
+            <voice name="de-DE-SeraphinaMultilingualNeural">
+              <prosody rate="-20.00%">`;
+        } else {
+          // Text outside quotation marks -> Use the first voice with prosody
+          ssml += `${part}`;
+        }
+      });
+
+      // Close the SSML tags
+      ssml += `</prosody></voice></speak>`;
+      return ssml;
+    };
+
+    // Generate SSML for the given text
+    const ssml = constructSSML(text);
 
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
 
-    // Synthesize the SSML to generate audio
+    // Synthesize the SSML to generate the audio
     synthesizer.speakSsmlAsync(
       ssml,
       async (result) => {
@@ -221,7 +250,7 @@ async function generateAudioNarration(text) {
           // Get the audio data as a buffer
           const audioBuffer = result.audioData;
 
-          // Upload the audio to Azure Blob Storage or another storage service
+          // Upload the audio to Azure Blob Storage
           const audioUrl = await uploadAudioToStorage(audioBuffer);
 
           resolve(audioUrl);
@@ -237,6 +266,7 @@ async function generateAudioNarration(text) {
     );
   });
 }
+
 
 // Function to upload audio buffer to Azure Blob Storage and get a URL
 async function uploadAudioToStorage(audioBuffer) {
