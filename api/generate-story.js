@@ -96,12 +96,10 @@ export default async function handler(req, res) {
       throw new Error('Story generation failed.');
     }
 
-    // **NEW ADDITION STARTS HERE**
     // Convert HTML to plain text for audio narration
     const storyText = htmlToText(storyHtml, {
       wordwrap: false,
     });
-    // **NEW ADDITION ENDS HERE**
 
     // Generate a concise prompt for DALL·E 3 based on the story
     const promptResponse = await openai.chat.completions.create({
@@ -201,13 +199,23 @@ async function generateAudioNarration(text) {
       process.env.AZURE_SPEECH_KEY,
       process.env.AZURE_SPEECH_REGION
     );
-    speechConfig.speechSynthesisOutputFormat =
-      sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
+
+    // Set output format to MP3
+    speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
+
+    // SSML for voice configuration (adjust speed and pitch as needed)
+    const ssml = `
+      <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="en-US">
+        <voice name="en-US-AriaNeural">
+          <prosody rate="-15%" pitch="+1%"> ${text} </prosody>
+        </voice>
+      </speak>`;
 
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
 
-    synthesizer.speakTextAsync(
-      text,
+    // Synthesize the SSML to generate audio
+    synthesizer.speakSsmlAsync(
+      ssml,
       async (result) => {
         if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
           // Get the audio data as a buffer
