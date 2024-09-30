@@ -1,5 +1,7 @@
 import OpenAI from 'openai';
 import axios from 'axios';
+import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
+import { BlobServiceClient } from '@azure/storage-blob';
 
 export const config = {
   api: {
@@ -159,13 +161,76 @@ ${story}`,
       throw new Error('Image generation failed.');
     }
 
-    // Send the story and image URL back to the client
-    res.status(200).json({ story, imageUrl });
+// Generate audio narration for the story
+    const audioUrl = await generateAudioNarration(story);
+
+    // Send the story, image URL, and audio URL back to the client
+    res.status(200).json({ story, imageUrl, audioUrl });
   } catch (error) {
-    console.error('OpenAI API Error:', error.response ? error.response.data : error.message);
+    console.error('Error:', error.response ? error.response.data : error.message);
     res.status(500).json({
-      error: 'Failed to generate story or image.',
+      error: 'Failed to generate story, image, or audio narration.',
       details: error.response ? error.response.data : error.message,
     });
   }
+}
+
+// Function to generate audio narration using Azure Speech Service
+async function generateAudioNarration(text) {
+  return new Promise((resolve, reject) => {
+    const speechConfig = sdk.SpeechConfig.fromSubscription(
+      process.env.AZURE_SPEECH_KEY,
+      process.env.AZURE_SPEECH_REGION
+    );
+    speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
+
+    const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
+
+    synthesizer.speakTextAsync(
+      text,
+      async (result) => {
+        if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+          // Get the audio data as a buffer
+          const audioBuffer = result.audioData;
+
+          // Upload the audio to Azure Blob Storage or another storage service
+          const audioUrl = await uploadAudioToStorage(audioBuffer);
+
+          resolve(audioUrl);
+        } else {
+          reject(result.errorDetails);
+        }
+        synthesizer.close();
+      },
+      (error) => {
+        synthesizer.close();
+        reject(error);
+      }
+    );
+  });
+}
+
+// Function to upload audio buffer to Azure Blob Storage and get a URL
+async function uploadAudioToStorage(audioBuffer) {
+  const blobServiceClient = BlobServiceClient.fromConnectionString(
+    process.env.AZURE_STORAGE_CONNECTION_STRING
+  );
+  const containerClient = blobServiceClient.getContainerClient(
+    process.env.AZURE_STORAGE_CONTAINER_NAME
+  );
+
+  // Generate a unique name for the audio file
+  const blobName = `audio-${Date.now()}.mp3`;
+  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+  // Upload the audio buffer
+  await blockBlobClient.uploadData(audioBuffer, {
+    blobHTTPHeaders: { blobContentType: 'audio/mpeg' },
+  });
+
+  // Generate a SAS token for the blob to make it accessible
+  const audioUrl = blockBlobClient.url; // If the container is public
+  // If the container is private, generate a SAS token or use another method to provide access
+
+  return audioUrl;
 }

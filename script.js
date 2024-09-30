@@ -71,24 +71,94 @@ function convertToBase64(file) {
 }
 
 async function generateStory(base64Image, mimeType) {
+  try {
+    const response = await fetch('/api/generate-story', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ base64Image, mimeType }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Unknown error');
+    }
+
+    const data = await response.json();
+    return data; // Now includes story, imageUrl, and audioUrl
+  } catch (error) {
+    console.error('API Error:', error);
+    return {
+      story: 'An error occurred while generating the story.',
+      imageUrl: null,
+      audioUrl: null,
+    };
+  }
+}
+
+uploadInput.addEventListener('change', async () => {
+  const file = uploadInput.files[0];
+  if (file) {
+    // Display loading message
+    storyDiv.innerHTML = '';
+    loadingDiv.textContent = 'Generating story and image...';
+
     try {
-        const response = await fetch('/api/generate-story', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ base64Image, mimeType }),
+      // Convert the image to base64 and send it to the server
+      const base64Image = await convertToBase64(file);
+      const result = await generateStory(base64Image, file.type);
+      loadingDiv.textContent = '';
+
+      // Display the story with HTML content
+      storyDiv.innerHTML = result.story || '<p>No story generated.</p>';
+
+      // Display the generated image if available
+      if (result.imageUrl) {
+        const generatedImage = document.createElement('img');
+        generatedImage.src = result.imageUrl;
+        generatedImage.alt = 'Generated Image';
+        generatedImage.style.maxWidth = '100%';
+        generatedImage.style.marginTop = '20px';
+        storyDiv.appendChild(generatedImage);
+      }
+
+      // Display the QR code for the audio narration
+      if (result.audioUrl) {
+        const qrCodeDiv = document.createElement('div');
+        qrCodeDiv.id = 'qrcode';
+        qrCodeDiv.style.marginTop = '20px';
+        storyDiv.appendChild(qrCodeDiv);
+
+        // Generate QR code
+        new QRCode(qrCodeDiv, {
+          text: result.audioUrl,
+          width: 128,
+          height: 128,
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Unknown error');
-        }
+        // Add a label
+        const qrLabel = document.createElement('p');
+        qrLabel.textContent = 'Scan to listen to the story';
+        qrLabel.style.textAlign = 'center';
+        storyDiv.appendChild(qrLabel);
+      }
 
-        const data = await response.json();
-        return data; // Return both story and imageUrl
+      // Create and append the Print button
+      const printButton = document.createElement('button');
+      printButton.textContent = 'Print';
+      printButton.id = 'print-btn';
+      printButton.style.marginTop = '20px';
+      printButton.addEventListener('click', () => {
+        window.print();
+      });
+      storyDiv.appendChild(printButton);
     } catch (error) {
-        console.error('API Error:', error);
-        return { story: 'An error occurred while generating the story.', imageUrl: null };
+      loadingDiv.textContent = '';
+      const errorParagraph = document.createElement('p');
+      errorParagraph.textContent = 'Failed to generate story and image.';
+      storyDiv.appendChild(errorParagraph);
+      console.error('Error:', error);
     }
-}
+  }
+});

@@ -33,6 +33,10 @@
             margin-top: 20px;
         }
 
+#qrcode {
+    display: block;
+    margin: 0 auto;
+}
         /* Print-specific styles */
         @media print {
             @page {
@@ -55,6 +59,10 @@
                 max-width: 100%;
                 height: auto;
             }
+			
+			#qrcode {
+        display: block !important;
+    }
         }
     </style>
 </head>
@@ -66,6 +74,8 @@
     <div id="loading"></div>
     <div id="story"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="script.js"></script>
+
 </body>
 </html>

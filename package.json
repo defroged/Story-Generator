@@ -11,9 +11,11 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@azure/storage-blob": "^12.25.0",
     "axios": "^1.7.7",
     "busboy": "^1.6.0",
     "form-data": "^4.0.0",
+    "microsoft-cognitiveservices-speech-sdk": "^1.40.0",
     "openai": "^4.64.0"
   },
   "engines": {
