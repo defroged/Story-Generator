@@ -39,7 +39,7 @@ export default async function handler(req, res) {
 
 1. **Vocabulary and Grammar**: 
    - Use as many words as possible from the vocabulary list on the left side of the page.
-   - Construct your sentences using only the grammar points listed on the left side. Avoid using any grammar that is more advanced than those provided.
+   - Construct your sentences using ONLY the grammar points listed on the left side. Do not use any other grammar!!! Avoid using any grammar that is more advanced than those provided.
 
 2. **Word Limit**:
    - Adjust the length of the story according to the level indicated on the left side of the page:
