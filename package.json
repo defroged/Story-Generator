@@ -17,7 +17,7 @@
     "form-data": "^4.0.0",
     "html-to-text": "^9.0.5",
     "microsoft-cognitiveservices-speech-sdk": "^1.40.0",
-    "openai": "^4.64.0"
+    "openai": "^4.66.1"
   },
   "engines": {
     "node": "20.x"
