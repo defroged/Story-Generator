@@ -9,6 +9,7 @@ script for Azure voice:
     </voice>
 </speak>
 
+Change form layout to top and bottom half (instead of left and right)
 increased timeout to 60
 
 When writing the script, please write it in its entirety without missing any part, so I can just replace my current script.

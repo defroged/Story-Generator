@@ -280,32 +280,37 @@ async function generateAudioNarration(storyHtml) { // Changed parameter to story
       sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
 
     const constructSSML = (inputHtml) => {
-      // Parse the input HTML to extract the title and body
-      const $ = load(inputHtml); // Updated to use 'load' from 'cheerio'
+  // Parse the input HTML to extract the title and body
+  const $ = load(inputHtml);
 
-      let ssml = `
-        <speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="de-DE">
-          <voice name="de-DE-SeraphinaMultilingualNeural">
-            <prosody rate="-20.00%" pitch="-10.00%">`;
+  let ssml = `
+    <speak xmlns="http://www.w3.org/2001/10/synthesis" 
+           xmlns:mstts="http://www.w3.org/2001/mstts" 
+           xmlns:emo="http://www.w3.org/2009/10/emotionml" 
+           version="1.0" xml:lang="de-DE">
+      <voice name="de-DE-SeraphinaMultilingualNeural">
+        <prosody rate="-20.00%" pitch="-10.00%">`;
 
-      // Extract and modify the title
-      const title = $('h1').text();
-      if (title) {
-        ssml += `
-              <prosody rate="-40%" pitch="-15%">
-                ${title}
-              </prosody>`;
-      }
+  // Extract and modify the title
+  const title = $('h1').text();
+  if (title) {
+    ssml += `
+          <prosody rate="-40%" pitch="-15%">
+            ${title}
+          </prosody>`;
+    // Remove the title from the DOM to avoid duplication
+    $('h1').remove();
+  }
 
-      // Extract and append the body content
-      const bodyContent = $('body').text() || $('html').text();
-      if (bodyContent) {
-        ssml += `${bodyContent}`;
-      }
+  // Extract and append the body content without the title
+  const bodyContent = $('body').text() || $('html').text();
+  if (bodyContent) {
+    ssml += `${bodyContent}`;
+  }
 
-      ssml += `</prosody></voice></speak>`;
-      return ssml;
-    };
+  ssml += `</prosody></voice></speak>`;
+  return ssml;
+};
 
     const ssml = constructSSML(storyHtml);
 
