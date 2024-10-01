@@ -1,8 +1,10 @@
+// Import necessary modules
 import OpenAI from 'openai';
 import axios from 'axios';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { htmlToText } from 'html-to-text';
+import { parse } from 'node-html-parser'; // Import the HTML parser
 
 export const config = {
   api: {
@@ -79,9 +81,9 @@ ${extractedText}
 
     console.log('Prompt for story generation:', prompt);
 
-    // Step 3: Generate the story using OpenAI GPT-4o
+    // Step 3: Generate the story using OpenAI GPT-4
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 500,
       temperature: 0.7,
@@ -121,7 +123,7 @@ ${storyText}`,
     console.log('Messages for image prompt generation:', imagePromptMessages);
 
     const promptResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4',
       messages: imagePromptMessages,
       max_tokens: 150,
       temperature: 0.7,
@@ -157,13 +159,13 @@ ${storyText}`,
       throw new Error('The generated prompt contains disallowed content.');
     }
 
-    // Generate image using DALL·E (Using 'prompt' as per your request)
-    console.log('Sending prompt to DALL·E:', prompt);
+    // Generate image using DALL·E
+    console.log('Sending image prompt to DALL·E:', imagePrompt);
 
     const imageResponse = await axios.post(
       'https://api.openai.com/v1/images/generations',
       {
-        prompt: prompt, // Using 'prompt' variable here
+        prompt: imagePrompt,
         model: 'dall-e-3',
         n: 1,
         size: '1024x1024',
@@ -185,7 +187,7 @@ ${storyText}`,
     console.log('Generated image URL:', imageUrl);
 
     // Generate audio narration
-    const audioUrl = await generateAudioNarration(storyText);
+    const audioUrl = await generateAudioNarration(storyHtml); // Pass the HTML content
 
     console.log('Generated audio URL:', audioUrl);
 
@@ -268,7 +270,7 @@ async function extractTextFromImage(base64Image) {
   }
 }
 
-async function generateAudioNarration(text) {
+async function generateAudioNarration(htmlContent) {
   return new Promise((resolve, reject) => {
     const speechConfig = sdk.SpeechConfig.fromSubscription(
       process.env.AZURE_SPEECH_KEY,
@@ -278,36 +280,7 @@ async function generateAudioNarration(text) {
     speechConfig.speechSynthesisOutputFormat =
       sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
 
-    const constructSSML = (inputText) => {
-      let ssml = `
-        <speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="de-DE">
-          <voice name="de-DE-SeraphinaMultilingualNeural">
-            <prosody rate="-20.00%" pitch="-10.00%">`;
-
-      const parts = inputText.split(/(".*?")/g);
-
-      parts.forEach((part) => {
-        if (part.startsWith('"') && part.endsWith('"')) {
-          ssml += `
-            </prosody>
-            </voice>
-            <voice name="de-DE-FlorianMultilingualNeural">
-              <prosody rate="-20.00%" pitch="-10.00%">
-              ${part}
-            </prosody>
-            </voice>
-            <voice name="de-DE-SeraphinaMultilingualNeural">
-              <prosody rate="-20.00%" pitch="-10.00%">`;
-        } else {
-          ssml += `${part}`;
-        }
-      });
-
-      ssml += `</prosody></voice></speak>`;
-      return ssml;
-    };
-
-    const ssml = constructSSML(text);
+    const ssml = constructSSML(htmlContent);
 
     console.log('SSML for speech synthesis:', ssml);
 
@@ -332,6 +305,67 @@ async function generateAudioNarration(text) {
     );
   });
 }
+
+// Updated constructSSML function
+const constructSSML = (inputHtml) => {
+  const root = parse(inputHtml);
+
+  let ssml = `
+    <speak xmlns="http://www.w3.org/2001/10/synthesis"
+           xmlns:mstts="http://www.w3.org/2001/mstts"
+           xmlns:emo="http://www.w3.org/2009/10/emotionml"
+           version="1.0" xml:lang="de-DE">
+      <voice name="de-DE-SeraphinaMultilingualNeural">
+        <prosody rate="-20.00%" pitch="-10.00%">`;
+
+  function processNode(node) {
+    if (node.nodeType === 3) {
+      // Text node
+      // Handle quotes within text nodes
+      const parts = node.rawText.split(/(".*?")/g);
+      parts.forEach((part) => {
+        if (part.startsWith('"') && part.endsWith('"')) {
+          ssml += `
+            </prosody>
+            </voice>
+            <voice name="de-DE-FlorianMultilingualNeural">
+              <prosody rate="-20.00%" pitch="-10.00%">
+              ${part}
+            </prosody>
+            </voice>
+            <voice name="de-DE-SeraphinaMultilingualNeural">
+              <prosody rate="-20.00%" pitch="-10.00%">`;
+        } else {
+          ssml += part;
+        }
+      });
+    } else if (node.tagName && node.tagName.toLowerCase() === 'h1') {
+      // Adjust prosody for the title
+      ssml += `
+        </prosody>
+        </voice>
+        <voice name="de-DE-SeraphinaMultilingualNeural">
+          <prosody rate="-40%" pitch="-15%">
+            ${node.textContent}
+          </prosody>
+        </voice>
+        <voice name="de-DE-SeraphinaMultilingualNeural">
+          <prosody rate="-20.00%" pitch="-10.00%">`;
+    } else {
+      // Recursively process child nodes
+      if (node.childNodes && node.childNodes.length > 0) {
+        node.childNodes.forEach((child) => processNode(child));
+      }
+    }
+  }
+
+  // Start processing the root node
+  processNode(root);
+
+  // Close the SSML tags
+  ssml += `</prosody></voice></speak>`;
+  return ssml;
+};
 
 async function uploadAudioToStorage(audioBuffer) {
   const blobServiceClient = BlobServiceClient.fromConnectionString(
