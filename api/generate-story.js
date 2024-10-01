@@ -25,7 +25,6 @@ export default async function handler(req, res) {
     const { base64Image, mimeType } = req.body;
 
     if (!base64Image || !mimeType) {
-      console.error('No base64 image data or MIME type found!');
       res
         .status(400)
         .json({ error: 'Image file and MIME type are required.' });
@@ -38,8 +37,6 @@ export default async function handler(req, res) {
     if (!extractedText) {
       throw new Error('Text extraction failed.');
     }
-
-    console.log('Extracted text from image:', extractedText);
 
     // Step 2: Construct the prompt using the extracted text
     const prompt = `
@@ -78,8 +75,6 @@ Here is the text extracted from the image:
 ${extractedText}
 `;
 
-    console.log('Prompt for story generation:', prompt);
-
     // Step 3: Generate the story using OpenAI GPT-4
     const response = await openai.chat.completions.create({
       model: 'gpt-4',
@@ -94,14 +89,10 @@ ${extractedText}
       throw new Error('Story generation failed.');
     }
 
-    console.log('Generated story HTML:', storyHtml);
-
     // Convert HTML to text for image and audio generation
     const storyText = htmlToText(storyHtml, {
       wordwrap: false,
     });
-
-    console.log('Story text for image and audio generation:', storyText);
 
     // Generate image prompt (Optional, but currently not used in image generation)
     const imagePromptMessages = [
@@ -119,8 +110,6 @@ ${storyText}`,
       },
     ];
 
-    console.log('Messages for image prompt generation:', imagePromptMessages);
-
     const promptResponse = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: imagePromptMessages,
@@ -137,8 +126,6 @@ ${storyText}`,
     if (imagePrompt.length > 1000) {
       imagePrompt = imagePrompt.substring(0, 1000);
     }
-
-    console.log('Generated image prompt:', imagePrompt);
 
     // Image moderation (optional, but recommended)
     const moderationResponse = await axios.post(
@@ -159,8 +146,6 @@ ${storyText}`,
     }
 
     // Generate image using DALL·E (Using 'prompt' as per your request)
-    console.log('Sending prompt to DALL·E:', prompt);
-
     const imageResponse = await axios.post(
       'https://api.openai.com/v1/images/generations',
       {
@@ -183,19 +168,11 @@ ${storyText}`,
       throw new Error('Image generation failed.');
     }
 
-    console.log('Generated image URL:', imageUrl);
-
     // Generate audio narration
     const audioUrl = await generateAudioNarration(storyHtml);
 
-    console.log('Generated audio URL:', audioUrl);
-
     res.status(200).json({ story: storyHtml, imageUrl, audioUrl });
   } catch (error) {
-    console.error(
-      'Error:',
-      error.response ? error.response.data : error.message
-    );
     res.status(500).json({
       error: 'Failed to generate story, image, or audio narration.',
       details: error.response ? error.response.data : error.message,
@@ -260,11 +237,8 @@ async function extractTextFromImage(base64Image) {
       }
     }
 
-    console.log('Extracted OCR text:', extractedText);
-
     return extractedText;
   } catch (error) {
-    console.error('Error in extractTextFromImage:', error.message);
     throw error;
   }
 }
@@ -302,8 +276,6 @@ async function generateAudioNarration(storyHtml) {
     };
 
     const ssml = constructSSML(storyHtml);
-
-    console.log('SSML for speech synthesis:', ssml);
 
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
 
@@ -343,8 +315,6 @@ async function uploadAudioToStorage(audioBuffer) {
   });
 
   const audioUrl = blockBlobClient.url;
-
-  console.log('Uploaded audio to storage:', audioUrl);
 
   return audioUrl;
 }
