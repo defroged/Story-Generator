@@ -1,10 +1,9 @@
-// Import necessary modules
 import OpenAI from 'openai';
 import axios from 'axios';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { htmlToText } from 'html-to-text';
-import { parse } from 'node-html-parser'; // Import the HTML parser
+import cheerio from 'cheerio'; // Added import for cheerio
 
 export const config = {
   api: {
@@ -159,7 +158,7 @@ ${storyText}`,
       throw new Error('The generated prompt contains disallowed content.');
     }
 
-    // Generate image using DALL·E (Using 'prompt' as per your original code)
+    // Generate image using DALL·E (Using 'prompt' as per your request)
     console.log('Sending prompt to DALL·E:', prompt);
 
     const imageResponse = await axios.post(
@@ -187,7 +186,7 @@ ${storyText}`,
     console.log('Generated image URL:', imageUrl);
 
     // Generate audio narration
-    const audioUrl = await generateAudioNarration(storyHtml); // Pass the HTML content
+    const audioUrl = await generateAudioNarration(storyHtml); // Changed parameter to storyHtml
 
     console.log('Generated audio URL:', audioUrl);
 
@@ -270,7 +269,7 @@ async function extractTextFromImage(base64Image) {
   }
 }
 
-async function generateAudioNarration(htmlContent) {
+async function generateAudioNarration(storyHtml) { // Changed parameter to storyHtml
   return new Promise((resolve, reject) => {
     const speechConfig = sdk.SpeechConfig.fromSubscription(
       process.env.AZURE_SPEECH_KEY,
@@ -280,7 +279,35 @@ async function generateAudioNarration(htmlContent) {
     speechConfig.speechSynthesisOutputFormat =
       sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
 
-    const ssml = constructSSML(htmlContent);
+    const constructSSML = (inputHtml) => {
+      // Parse the input HTML to extract the title and body
+      const $ = cheerio.load(inputHtml);
+
+      let ssml = `
+        <speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="de-DE">
+          <voice name="de-DE-SeraphinaMultilingualNeural">
+            <prosody rate="-20.00%" pitch="-10.00%">`;
+
+      // Extract and modify the title
+      const title = $('h1').text();
+      if (title) {
+        ssml += `
+              <prosody rate="-40%" pitch="-15%">
+                ${title}
+              </prosody>`;
+      }
+
+      // Extract and append the body content
+      const bodyContent = $('body').text() || $('html').text();
+      if (bodyContent) {
+        ssml += `${bodyContent}`;
+      }
+
+      ssml += `</prosody></voice></speak>`;
+      return ssml;
+    };
+
+    const ssml = constructSSML(storyHtml);
 
     console.log('SSML for speech synthesis:', ssml);
 
@@ -305,67 +332,6 @@ async function generateAudioNarration(htmlContent) {
     );
   });
 }
-
-// Updated constructSSML function
-const constructSSML = (inputHtml) => {
-  const root = parse(inputHtml);
-
-  let ssml = `
-    <speak xmlns="http://www.w3.org/2001/10/synthesis"
-           xmlns:mstts="http://www.w3.org/2001/mstts"
-           xmlns:emo="http://www.w3.org/2009/10/emotionml"
-           version="1.0" xml:lang="de-DE">
-      <voice name="de-DE-SeraphinaMultilingualNeural">
-        <prosody rate="-20.00%" pitch="-10.00%">`;
-
-  function processNode(node) {
-    if (node.nodeType === 3) {
-      // Text node
-      // Handle quotes within text nodes
-      const parts = node.rawText.split(/(".*?")/g);
-      parts.forEach((part) => {
-        if (part.startsWith('"') && part.endsWith('"')) {
-          ssml += `
-            </prosody>
-            </voice>
-            <voice name="de-DE-FlorianMultilingualNeural">
-              <prosody rate="-20.00%" pitch="-10.00%">
-              ${part}
-            </prosody>
-            </voice>
-            <voice name="de-DE-SeraphinaMultilingualNeural">
-              <prosody rate="-20.00%" pitch="-10.00%">`;
-        } else {
-          ssml += part;
-        }
-      });
-    } else if (node.tagName && node.tagName.toLowerCase() === 'h1') {
-      // Adjust prosody for the title
-      ssml += `
-        </prosody>
-        </voice>
-        <voice name="de-DE-SeraphinaMultilingualNeural">
-          <prosody rate="-40%" pitch="-15%">
-            ${node.textContent}
-          </prosody>
-        </voice>
-        <voice name="de-DE-SeraphinaMultilingualNeural">
-          <prosody rate="-20.00%" pitch="-10.00%">`;
-    } else {
-      // Recursively process child nodes
-      if (node.childNodes && node.childNodes.length > 0) {
-        node.childNodes.forEach((child) => processNode(child));
-      }
-    }
-  }
-
-  // Start processing the root node
-  processNode(root);
-
-  // Close the SSML tags
-  ssml += `</prosody></voice></speak>`;
-  return ssml;
-};
 
 async function uploadAudioToStorage(audioBuffer) {
   const blobServiceClient = BlobServiceClient.fromConnectionString(
