@@ -38,6 +38,8 @@ export default async function handler(req, res) {
       throw new Error('Text extraction failed.');
     }
 
+    console.log('Extracted text from image:', extractedText);
+
     // Step 2: Construct the prompt using the extracted text
     const prompt = `
 Write a short story based on the details found in the text below. Please generate the story in HTML. Provide only the HTML code without any Markdown formatting or code block delimiters.
@@ -75,6 +77,8 @@ Here is the text extracted from the image:
 ${extractedText}
 `;
 
+    console.log('Prompt for story generation:', prompt);
+
     // Step 3: Generate the story using OpenAI GPT-4o
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -89,29 +93,36 @@ ${extractedText}
       throw new Error('Story generation failed.');
     }
 
-    // The rest of your code remains the same...
+    console.log('Generated story HTML:', storyHtml);
+
     // Convert HTML to text for image and audio generation
     const storyText = htmlToText(storyHtml, {
       wordwrap: false,
     });
 
-    // Generate image prompt
-    const promptResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are a helpful assistant that creates prompts for image generation.',
-        },
-        {
-          role: 'user',
-          content: `Based on the following story, create a detailed and vivid description suitable for generating an image. Focus on positive, family-friendly elements, and avoid any disallowed content. The description should be less than 1000 characters.
+    console.log('Story text for image and audio generation:', storyText);
+
+    // Generate image prompt (Optional, but currently not used in image generation)
+    const imagePromptMessages = [
+      {
+        role: 'system',
+        content:
+          'You are a helpful assistant that creates prompts for image generation.',
+      },
+      {
+        role: 'user',
+        content: `Based on the following story, create a detailed and vivid description suitable for generating an image. Focus on positive, family-friendly elements, and avoid any disallowed content. The description should be less than 1000 characters.
 
 Story:
 ${storyText}`,
-        },
-      ],
+      },
+    ];
+
+    console.log('Messages for image prompt generation:', imagePromptMessages);
+
+    const promptResponse = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: imagePromptMessages,
       max_tokens: 150,
       temperature: 0.7,
     });
@@ -125,6 +136,8 @@ ${storyText}`,
     if (imagePrompt.length > 1000) {
       imagePrompt = imagePrompt.substring(0, 1000);
     }
+
+    console.log('Generated image prompt:', imagePrompt);
 
     // Image moderation (optional, but recommended)
     const moderationResponse = await axios.post(
@@ -144,11 +157,13 @@ ${storyText}`,
       throw new Error('The generated prompt contains disallowed content.');
     }
 
-    // Generate image using DALL·E
+    // Generate image using DALL·E (Using 'prompt' as per your request)
+    console.log('Sending prompt to DALL·E:', prompt);
+
     const imageResponse = await axios.post(
       'https://api.openai.com/v1/images/generations',
       {
-        prompt: prompt,
+        prompt: prompt, // Using 'prompt' variable here
         model: 'dall-e-3',
         n: 1,
         size: '1024x1024',
@@ -167,8 +182,12 @@ ${storyText}`,
       throw new Error('Image generation failed.');
     }
 
+    console.log('Generated image URL:', imageUrl);
+
     // Generate audio narration
     const audioUrl = await generateAudioNarration(storyText);
+
+    console.log('Generated audio URL:', audioUrl);
 
     res.status(200).json({ story: storyHtml, imageUrl, audioUrl });
   } catch (error) {
@@ -240,6 +259,8 @@ async function extractTextFromImage(base64Image) {
       }
     }
 
+    console.log('Extracted OCR text:', extractedText);
+
     return extractedText;
   } catch (error) {
     console.error('Error in extractTextFromImage:', error.message);
@@ -254,14 +275,15 @@ async function generateAudioNarration(text) {
       process.env.AZURE_SPEECH_REGION
     );
 
-    speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
+    speechConfig.speechSynthesisOutputFormat =
+      sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
 
     const constructSSML = (inputText) => {
       let ssml = `
         <speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="de-DE">
           <voice name="de-DE-SeraphinaMultilingualNeural">
             <prosody rate="-20.00%" pitch="-10.00%">`;
-      
+
       const parts = inputText.split(/(".*?")/g);
 
       parts.forEach((part) => {
@@ -286,6 +308,8 @@ async function generateAudioNarration(text) {
     };
 
     const ssml = constructSSML(text);
+
+    console.log('SSML for speech synthesis:', ssml);
 
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
 
@@ -325,6 +349,8 @@ async function uploadAudioToStorage(audioBuffer) {
   });
 
   const audioUrl = blockBlobClient.url;
+
+  console.log('Uploaded audio to storage:', audioUrl);
 
   return audioUrl;
 }
