@@ -148,7 +148,8 @@ ${storyText}`,
     const imageResponse = await axios.post(
       'https://api.openai.com/v1/images/generations',
       {
-        prompt: imagePrompt,
+        prompt: prompt,
+        model: 'dall-e-3',
         n: 1,
         size: '1024x1024',
       },
