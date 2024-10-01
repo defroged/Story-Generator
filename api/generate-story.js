@@ -81,9 +81,9 @@ ${extractedText}
 
     console.log('Prompt for story generation:', prompt);
 
-    // Step 3: Generate the story using OpenAI GPT-4
+    // Step 3: Generate the story using OpenAI GPT-4o
     const response = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 500,
       temperature: 0.7,
@@ -123,7 +123,7 @@ ${storyText}`,
     console.log('Messages for image prompt generation:', imagePromptMessages);
 
     const promptResponse = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o',
       messages: imagePromptMessages,
       max_tokens: 150,
       temperature: 0.7,
@@ -159,13 +159,13 @@ ${storyText}`,
       throw new Error('The generated prompt contains disallowed content.');
     }
 
-    // Generate image using DALL·E
-    console.log('Sending image prompt to DALL·E:', imagePrompt);
+    // Generate image using DALL·E (Using 'prompt' as per your original code)
+    console.log('Sending prompt to DALL·E:', prompt);
 
     const imageResponse = await axios.post(
       'https://api.openai.com/v1/images/generations',
       {
-        prompt: imagePrompt,
+        prompt: prompt, // Using 'prompt' variable here
         model: 'dall-e-3',
         n: 1,
         size: '1024x1024',
