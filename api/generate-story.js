@@ -112,7 +112,7 @@ ${extractedText}
       },
       {
         role: 'user',
-        content: `Based on the following story, create a detailed and vivid description suitable for generating an image. Focus on positive, family-friendly elements, and avoid any disallowed content. The description should be less than 1000 characters.
+        content: `Based on the following story, create a detailed and vivid description suitable for generating an image. Focus on positive, family-friendly elements, and avoid any disallowed content. The description should be less than 1000 characters. The desired image output should be simple without too many details in the background.
 
 Story:
 ${storyText}`,
@@ -284,33 +284,54 @@ async function generateAudioNarration(storyHtml) { // Changed parameter to story
   const $ = load(inputHtml);
 
   let ssml = `
-    <speak xmlns="http://www.w3.org/2001/10/synthesis" 
-           xmlns:mstts="http://www.w3.org/2001/mstts" 
-           xmlns:emo="http://www.w3.org/2009/10/emotionml" 
-           version="1.0" xml:lang="de-DE">
-      <voice name="de-DE-SeraphinaMultilingualNeural">
-        <prosody rate="-20.00%" pitch="-10.00%">`;
+        <speak xmlns="http://www.w3.org/2001/10/synthesis" 
+               xmlns:mstts="http://www.w3.org/2001/mstts" 
+               xmlns:emo="http://www.w3.org/2009/10/emotionml" 
+               version="1.0" xml:lang="de-DE">
+          <voice name="de-DE-SeraphinaMultilingualNeural">
+            <prosody rate="-20.00%" pitch="-10.00%">`;
 
-  // Extract and modify the title
-  const title = $('h1').text();
-  if (title) {
-    ssml += `
-          <prosody rate="-40%" pitch="-15%">
-            ${title}
-          </prosody>`;
-    // Remove the title from the DOM to avoid duplication
-    $('h1').remove();
-  }
+      // Extract and modify the title
+      const title = $('h1').text();
+      if (title) {
+        ssml += `
+              <prosody rate="-40%" pitch="-15%">
+                ${title}
+              </prosody>`;
+        // Remove the title from the DOM to avoid duplication
+        $('h1').remove();
+      }
 
-  // Extract and append the body content without the title
-  const bodyContent = $('body').text() || $('html').text();
-  if (bodyContent) {
-    ssml += `${bodyContent}`;
-  }
+      // Extract and process the body content without the title
+      const bodyContent = $('body').text() || $('html').text();
 
-  ssml += `</prosody></voice></speak>`;
-  return ssml;
-};
+      if (bodyContent) {
+        // Split the body content into parts based on quotation marks
+        const parts = bodyContent.split(/(".*?")/g);
+
+        parts.forEach((part) => {
+          if (part.startsWith('"') && part.endsWith('"')) {
+            // Text inside quotation marks -> Use the second voice
+            ssml += `
+                  </prosody>
+                  </voice>
+                  <voice name="de-DE-FlorianMultilingualNeural">
+                    <prosody rate="-20.00%" pitch="-10.00%">
+                    ${part}
+                  </prosody>
+                  </voice>
+                  <voice name="de-DE-SeraphinaMultilingualNeural">
+                    <prosody rate="-20.00%">`;
+          } else {
+            // Text outside quotation marks -> Use the first voice with prosody
+            ssml += `${part}`;
+          }
+        });
+      }
+
+      ssml += `</prosody></voice></speak>`;
+      return ssml;
+    };
 
     const ssml = constructSSML(storyHtml);
 
