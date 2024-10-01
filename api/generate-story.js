@@ -3,7 +3,7 @@ import axios from 'axios';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { htmlToText } from 'html-to-text';
-import cheerio from 'cheerio'; // Added import for cheerio
+import { load } from 'cheerio'; // Updated import for cheerio
 
 export const config = {
   api: {
@@ -281,7 +281,7 @@ async function generateAudioNarration(storyHtml) { // Changed parameter to story
 
     const constructSSML = (inputHtml) => {
       // Parse the input HTML to extract the title and body
-      const $ = cheerio.load(inputHtml);
+      const $ = load(inputHtml); // Updated to use 'load' from 'cheerio'
 
       let ssml = `
         <speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="de-DE">
