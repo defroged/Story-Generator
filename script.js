@@ -16,7 +16,7 @@ uploadInput.addEventListener('change', async () => {
 
         try {
             const base64Image = await convertToBase64(file);
-            const result = await generateStory(base64Image, file.type);
+            const result = await generateStory(base64Image, 'image/png'); // Set mimeType to 'image/png'
             loadingDiv.textContent = '';
 
             storyDiv.innerHTML = result.story || '<p>No story generated.</p>';
@@ -72,8 +72,44 @@ function convertToBase64(file) {
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = () => {
-            const base64String = reader.result.split(',')[1];
-            resolve(base64String);
+            const img = new Image();
+            img.onload = () => {
+                const maxDimension = 1500;
+                let width = img.width;
+                let height = img.height;
+
+                // Calculate the new dimensions while maintaining the aspect ratio
+                if (width > height) {
+                    if (width > maxDimension) {
+                        height *= maxDimension / width;
+                        width = maxDimension;
+                    }
+                } else {
+                    if (height > maxDimension) {
+                        width *= maxDimension / height;
+                        height = maxDimension;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+
+                // Draw the image onto the canvas
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convert the canvas to a data URL in PNG format
+                const dataURL = canvas.toDataURL('image/png');
+
+                // Get the base64 string (exclude the prefix)
+                const base64String = dataURL.split(',')[1];
+                resolve(base64String);
+            };
+            img.onerror = (error) => {
+                reject(error);
+            };
+            img.src = reader.result;
         };
         reader.onerror = (error) => reject(error);
     });
