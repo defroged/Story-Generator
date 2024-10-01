@@ -3,7 +3,7 @@ import axios from 'axios';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { htmlToText } from 'html-to-text';
-import { load } from 'cheerio'; // Updated import for cheerio
+import { load } from 'cheerio';
 
 export const config = {
   api: {
@@ -80,9 +80,9 @@ ${extractedText}
 
     console.log('Prompt for story generation:', prompt);
 
-    // Step 3: Generate the story using OpenAI GPT-4o
+    // Step 3: Generate the story using OpenAI GPT-4
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 500,
       temperature: 0.7,
@@ -122,7 +122,7 @@ ${storyText}`,
     console.log('Messages for image prompt generation:', imagePromptMessages);
 
     const promptResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4',
       messages: imagePromptMessages,
       max_tokens: 150,
       temperature: 0.7,
@@ -186,7 +186,7 @@ ${storyText}`,
     console.log('Generated image URL:', imageUrl);
 
     // Generate audio narration
-    const audioUrl = await generateAudioNarration(storyHtml); // Changed parameter to storyHtml
+    const audioUrl = await generateAudioNarration(storyHtml);
 
     console.log('Generated audio URL:', audioUrl);
 
@@ -269,7 +269,7 @@ async function extractTextFromImage(base64Image) {
   }
 }
 
-async function generateAudioNarration(storyHtml) { // Changed parameter to storyHtml
+async function generateAudioNarration(storyHtml) {
   return new Promise((resolve, reject) => {
     const speechConfig = sdk.SpeechConfig.fromSubscription(
       process.env.AZURE_SPEECH_KEY,
@@ -280,56 +280,24 @@ async function generateAudioNarration(storyHtml) { // Changed parameter to story
       sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
 
     const constructSSML = (inputHtml) => {
-  // Parse the input HTML to extract the title and body
-  const $ = load(inputHtml);
+      // Parse the input HTML to extract text content
+      const $ = load(inputHtml);
 
-  let ssml = `
-        <speak xmlns="http://www.w3.org/2001/10/synthesis" 
-               xmlns:mstts="http://www.w3.org/2001/mstts" 
-               xmlns:emo="http://www.w3.org/2009/10/emotionml" 
+      // Extract the text content from the HTML
+      const textContent = $.text();
+
+      // Construct the SSML with a single voice and prosody
+      const ssml = `
+        <speak xmlns="http://www.w3.org/2001/10/synthesis"
+               xmlns:mstts="http://www.w3.org/2001/mstts"
+               xmlns:emo="http://www.w3.org/2009/10/emotionml"
                version="1.0" xml:lang="de-DE">
           <voice name="de-DE-SeraphinaMultilingualNeural">
-            <prosody rate="-20.00%" pitch="-10.00%">`;
-
-      // Extract and modify the title
-      const title = $('h1').text();
-      if (title) {
-        ssml += `
-              <prosody rate="-40%" pitch="-15%">
-                ${title}
-              </prosody>`;
-        // Remove the title from the DOM to avoid duplication
-        $('h1').remove();
-      }
-
-      // Extract and process the body content without the title
-      const bodyContent = $('body').text() || $('html').text();
-
-      if (bodyContent) {
-        // Split the body content into parts based on quotation marks
-        const parts = bodyContent.split(/(".*?")/g);
-
-        parts.forEach((part) => {
-          if (part.startsWith('"') && part.endsWith('"')) {
-            // Text inside quotation marks -> Use the second voice
-            ssml += `
-                  </prosody>
-                  </voice>
-                  <voice name="de-DE-FlorianMultilingualNeural">
-                    <prosody rate="-20.00%" pitch="-10.00%">
-                    ${part}
-                  </prosody>
-                  </voice>
-                  <voice name="de-DE-SeraphinaMultilingualNeural">
-                    <prosody rate="-20.00%">`;
-          } else {
-            // Text outside quotation marks -> Use the first voice with prosody
-            ssml += `${part}`;
-          }
-        });
-      }
-
-      ssml += `</prosody></voice></speak>`;
+            <prosody rate="-20.00%" pitch="-10.00%">
+              ${textContent}
+            </prosody>
+          </voice>
+        </speak>`;
       return ssml;
     };
 
