@@ -54,15 +54,14 @@ Follow these guidelines for writing the story:
    - On the right side of the page, you'll find the student's ideas for the story, including the time, place, characters, and plot, under the headings “who,” “where,” “when,” and “other details.”
    - If any of these fields are incomplete or missing, feel free to fill in the gaps creatively.
 
-4. **Incorporating Visuals**: 
-   - In the bottom right section of the page, there is a drawing that represents the student’s concept of the setting or characters. Do your best to incorporate elements from this drawing into the story.
-
-5. **Following the story map**:
+4. **Following the story map**:
    - Write your story in a way that follows the following general outline: 
      a) Exposition
      b) Conflict
      c) Climax
      d) Resolution
+
+5. Try to make the story exciting with some elements of surprise. Use humour in the story and try to make the reader laugh if the general theme of the story permits it.
 
 6. **Creating a title**:
    - After completing the story, think of an appropriate title for the story, and add it to your output as <title>.
