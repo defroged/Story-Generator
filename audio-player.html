@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Playback</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        #controls {
+            margin-top: 20px;
+        }
+        .speed-btn {
+            margin-right: 5px;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .speed-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Listen to the Story</h2>
+
+    <audio id="audio-player" controls>
+        Your browser does not support the audio element.
+    </audio>
+
+    <div id="controls">
+        <button class="speed-btn" onclick="changeSpeed(1.0)">Normal (1x)</button>
+        <button class="speed-btn" onclick="changeSpeed(0.9)">0.90x</button>
+        <button class="speed-btn" onclick="changeSpeed(0.8)">0.80x</button>
+        <button class="speed-btn" onclick="changeSpeed(0.7)">0.70x</button>
+        <button class="speed-btn" onclick="changeSpeed(0.6)">0.60x</button>
+    </div>
+
+    <script>
+        // Get the URL parameter for the audio file
+        const urlParams = new URLSearchParams(window.location.search);
+        const audioUrl = urlParams.get('audioUrl');
+        
+        if (audioUrl) {
+            const audioPlayer = document.getElementById('audio-player');
+            audioPlayer.src = audioUrl;
+        } else {
+            alert("No audio URL provided.");
+        }
+
+        function changeSpeed(speed) {
+            var audioPlayer = document.getElementById("audio-player");
+            audioPlayer.playbackRate = speed;
+        }
+    </script>
+
+</body>
+</html>

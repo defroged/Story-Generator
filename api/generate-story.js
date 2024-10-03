@@ -146,9 +146,17 @@ if (!imageUrl) {
 }
 
     // Generate audio narration using ElevenLabs
-    const audioUrl = await generateAudioNarration(storyHtml);
+const audioUrl = await generateAudioNarration(storyHtml);
 
-    res.status(200).json({ story: storyHtml, imageUrl, audioUrl });
+// Step 1: Modify to point to the new page
+const audioPageUrl = `https://yourapp.com/audio-player?audioUrl=${encodeURIComponent(audioUrl)}`;
+
+// Now generate the QR code for the new audio player page
+const qrCode = await generateQRCode(audioPageUrl);
+
+// Return the QR code URL, image URL, and story
+res.status(200).json({ story: storyHtml, imageUrl, qrCodeUrl: qrCode, audioPageUrl });
+
   } catch (error) {
     res.status(500).json({
       error: 'Failed to generate story, image, or audio narration.',

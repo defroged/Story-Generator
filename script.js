@@ -31,22 +31,25 @@ uploadInput.addEventListener('change', async () => {
             }
 
             if (result.audioUrl) {
-                const qrCodeDiv = document.createElement('div');
-                qrCodeDiv.id = 'qrcode';
-                qrCodeDiv.style.marginTop = '20px';
-                storyDiv.appendChild(qrCodeDiv);
+    const qrCodeDiv = document.createElement('div');
+    qrCodeDiv.id = 'qrcode';
+    qrCodeDiv.style.marginTop = '20px';
+    storyDiv.appendChild(qrCodeDiv);
 
-                new QRCode(qrCodeDiv, {
-                    text: result.audioUrl,
-                    width: 128,
-                    height: 128,
-                });
+    // Create the URL to the audio playback page with the audio URL as a query parameter
+    const playbackPageUrl = `${window.location.origin}/audio-player.html?audioUrl=${encodeURIComponent(result.audioUrl)}`;
 
-                const qrLabel = document.createElement('p');
-                qrLabel.textContent = 'Scan to listen to the story';
-                qrLabel.style.textAlign = 'center';
-                storyDiv.appendChild(qrLabel);
-            }
+    new QRCode(qrCodeDiv, {
+        text: playbackPageUrl,  // Point the QR code to the playback page
+        width: 128,
+        height: 128,
+    });
+
+    const qrLabel = document.createElement('p');
+    qrLabel.textContent = 'Scan to listen to the story with playback controls';
+    qrLabel.style.textAlign = 'center';
+    storyDiv.appendChild(qrLabel);
+}
 
             const printButton = document.createElement('button');
             printButton.textContent = 'Print';
