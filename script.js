@@ -4,6 +4,11 @@ const uploadInput = document.getElementById('upload-input');
 const storyDiv = document.getElementById('story');
 const loadingDiv = document.getElementById('loading');
 
+// Sleep function to delay execution, allowing UI updates to happen
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 captureBtn.addEventListener('click', () => {
     uploadInput.click();
 });
@@ -17,17 +22,24 @@ uploadInput.addEventListener('change', async () => {
         try {
             // Step 1: Convert image to base64
             const base64Image = await convertToBase64(file);
-            
+
+            // Force UI to update before proceeding
+            await sleep(100);  // Small delay to allow the message to render
+
             // Show loading message for generating the story
             loadingDiv.textContent = 'Generating story...';
+
             const result = await generateStory(base64Image, 'image/png'); // Set mimeType to 'image/png'
-            
+
             // Clear loading message for story generation
             loadingDiv.textContent = '';
 
             storyDiv.innerHTML = result.story || '<p>No story generated.</p>';
 
             if (result.imageUrl) {
+                // Force UI to update before proceeding
+                await sleep(100);  // Small delay to allow the message to render
+
                 // Show loading message for image generation
                 loadingDiv.textContent = 'Generating image...';
 
@@ -43,6 +55,9 @@ uploadInput.addEventListener('change', async () => {
             }
 
             if (result.audioUrl) {
+                // Force UI to update before proceeding
+                await sleep(100);  // Small delay to allow the message to render
+
                 // Show loading message for audio narration
                 loadingDiv.textContent = 'Generating audio narration...';
 
