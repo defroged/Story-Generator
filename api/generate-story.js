@@ -41,11 +41,11 @@ Write a short story based on the details found in the text below. Please generat
 Follow these guidelines for writing the story:
 
 1. **Vocabulary and Grammar**: 
-   - Use as many words as possible from the vocabulary list on the left side of the page.
-   - Construct your sentences using ONLY the grammar points listed on the left side. Do not use any other grammar!!! Avoid using any grammar that is more advanced than those provided.
+   - Use as many words as possible from the vocabulary list.
+   - Construct your sentences using ONLY the grammar points listed. Do not use any other grammar!!! Avoid using any grammar that is more advanced than those provided.
 
 2. **Word Limit**:
-   - Adjust the length of the story according to the level indicated on the left side of the page:
+   - Adjust the length of the story according to the "Student level" indicated:
      - For "Level 1 - Easy": Limit the story to 150 words, but not less than 100. Use very simple English aimed at young ESL learners.
      - For "Level 2 - Medium": Write up to 250 words, but not less than 180. Use very simple English aimed at young ESL learners.
      - For "Level 3 - Hard": Write no more than 400 words, but not less than 300. Use simple English aimed at young ESL learners.
@@ -93,77 +93,58 @@ ${extractedText}
 
     // Generate image prompt (Optional, but currently not used in image generation)
     const imagePromptMessages = [
-      {
-        role: 'system',
-        content:
-          'You are a helpful assistant that creates prompts for image generation.',
-      },
-      {
-        role: 'user',
-        content: `Based on the following story, create a detailed and vivid description suitable for generating a minimal image. The description should be less than 1000 characters.
+  {
+    role: 'system',
+    content: 'You are a helpful assistant that creates prompts for image generation.',
+  },
+  {
+    role: 'user',
+    content: `Based on the following story, create a short image generation prompt describing one of the main scenes from the story.
 
 Story:
 ${storyText}`,
-      },
-    ];
+  },
+];
 
-    const promptResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: imagePromptMessages,
-      max_tokens: 150,
-      temperature: 0.7,
-    });
+const promptResponse = await openai.chat.completions.create({
+  model: 'gpt-4o',
+  messages: imagePromptMessages,
+  max_tokens: 150,
+  temperature: 0.7,
+});
 
-    let imagePrompt = promptResponse.choices[0].message.content.trim();
+let imagePrompt = promptResponse.choices[0].message.content.trim();
 
-    if (!imagePrompt) {
-      throw new Error('Prompt generation failed.');
-    }
+if (!imagePrompt) {
+  throw new Error('Prompt generation failed.');
+}
 
-    if (imagePrompt.length > 1000) {
-      imagePrompt = imagePrompt.substring(0, 1000);
-    }
+if (imagePrompt.length > 1000) {
+  imagePrompt = imagePrompt.substring(0, 1000); // Truncate if too long
+}
 
-    // Image moderation (optional, but recommended)
-    const moderationResponse = await axios.post(
-      'https://api.openai.com/v1/moderations',
-      { input: imagePrompt },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-      }
-    );
+    // Generate image using DALL·E 
+const imageResponse = await axios.post(
+  'https://api.openai.com/v1/images/generations',
+  {
+    prompt: imagePrompt,  
+    model: 'dall-e-3',
+    n: 1,
+    size: '1024x1024',
+  },
+  {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+  }
+);
 
-    const moderationResult = moderationResponse.data.results[0];
+const imageUrl = imageResponse.data.data[0].url;
 
-    if (moderationResult.flagged) {
-      throw new Error('The generated prompt contains disallowed content.');
-    }
-
-    // Generate image using DALL·E (Using 'prompt' as per your request)
-    const imageResponse = await axios.post(
-      'https://api.openai.com/v1/images/generations',
-      {
-        prompt: prompt, // Using 'prompt' variable here
-        model: 'dall-e-3',
-        n: 1,
-        size: '1024x1024',
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-      }
-    );
-
-    const imageUrl = imageResponse.data.data[0].url;
-
-    if (!imageUrl) {
-      throw new Error('Image generation failed.');
-    }
+if (!imageUrl) {
+  throw new Error('Image generation failed.');
+}
 
     // Generate audio narration using ElevenLabs
     const audioUrl = await generateAudioNarration(storyHtml);

@@ -11,7 +11,7 @@ script for Azure voice:
 
 *Change form layout to top and bottom half (instead of left and right)
 *proccess image to make it 50% smaller, and .png
-*increased timeout to 60
+*work on form output page and story prompt.
 
 
 Prompt:
