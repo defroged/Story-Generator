@@ -221,23 +221,29 @@ async function extractTextFromImage(base64Image) {
 }
 
 async function generateAudioNarration(storyHtml) {
-  // Load the HTML and extract the text content, excluding the title
+  // Load the HTML and extract the text content
   const $ = load(storyHtml);
   
-  // Extract the title separately
+  // Extract the title from the <title> tag
   const storyTitle = $('title').text();
-  
-  // Remove the title from the rest of the HTML content
+
+  // Check if <h1> exists and remove it if it's the same as the title
+  const h1Text = $('h1').text();
+  if (h1Text === storyTitle) {
+    $('h1').remove();  // Remove the <h1> tag if it duplicates the title
+  }
+
+  // Now, remove the <title> from the HTML to avoid duplication
   $('title').remove();
-  
-  // Get the remaining text content after removing the title
+
+  // Get the remaining text content after removing the title and <h1> if necessary
   const textContent = $.text().trim();
-  
-  // Combine the title with the story content to ensure the title is only included once
+
+  // Prepare the final text for narration
   const finalTextContent = `${storyTitle}\n${textContent}`;
-  
+
   const apiKey = process.env.ELEVENLABS_API_KEY;
-  const voiceId = process.env.ELEVENLABS_VOICE_ID || '9BWtsMINqrJLrRacOk9x';
+  const voiceId = process.env.ELEVENLABS_VOICE_ID || '9BWtsMINqrJLrRacOk9x'; 
 
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
 
@@ -245,8 +251,9 @@ async function generateAudioNarration(storyHtml) {
     text: finalTextContent,
     model_id: 'eleven_multilingual_v2',
     voice_settings: {
-      stability: 0.30,
+      stability: 0.50,
       similarity_boost: 0.80,
+	  speaker_boost: true
     },
   };
 
