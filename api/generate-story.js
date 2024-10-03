@@ -29,8 +29,10 @@ export default async function handler(req, res) {
     }
 
     // Step 1: Extract text from image using Azure Vision OCR
+console.log('Starting text extraction from image');
     const extractedText = await extractTextFromImage(base64Image);
-
+    console.log('Text extracted:', extractedText);
+	
     if (!extractedText) {
       throw new Error('Text extraction failed.');
     }
@@ -70,7 +72,7 @@ Here is the text extracted from the image:
 
 ${extractedText}
 `;
-
+console.log('Starting story generation');
     // Step 3: Generate the story using OpenAI gpt-4o
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -78,7 +80,8 @@ ${extractedText}
       max_tokens: 500,
       temperature: 0.7,
     });
-
+    console.log('Story generation response:', response);
+	
     const storyHtml = response.choices[0].message.content.trim();
 
     if (!storyHtml) {
@@ -90,7 +93,8 @@ ${extractedText}
       wordwrap: false,
     });
 
-    // Generate image prompt (Optional, but currently not used in image generation)
+    // Generate image prompt 
+	    console.log('Starting image prompt generation');
     const imagePromptMessages = [
   {
     role: 'system',
@@ -111,7 +115,8 @@ const promptResponse = await openai.chat.completions.create({
   max_tokens: 150,
   temperature: 0.7,
 });
-
+    console.log('Image prompt response:', promptResponse);
+	
 let imagePrompt = promptResponse.choices[0].message.content.trim();
 
 if (!imagePrompt) {
@@ -123,6 +128,7 @@ if (imagePrompt.length > 1000) {
 }
 
     // Generate image using DALL·E 
+	    console.log('Starting image generation');
 const imageResponse = await axios.post(
   'https://api.openai.com/v1/images/generations',
   {
@@ -138,7 +144,9 @@ const imageResponse = await axios.post(
     },
   }
 );
-
+    console.log('Image generation response:', imageResponse);
+	
+	
 const imageUrl = imageResponse.data.data[0].url;
 
 if (!imageUrl) {
@@ -146,18 +154,13 @@ if (!imageUrl) {
 }
 
     // Generate audio narration using ElevenLabs
-const audioUrl = await generateAudioNarration(storyHtml);
+    console.log('Starting audio narration generation');
+    const audioUrl = await generateAudioNarration(storyHtml);
+    console.log('Audio narration URL:', audioUrl);
 
-// Step 1: Modify to point to the new page
-const audioPageUrl = `https://yourapp.com/audio-player?audioUrl=${encodeURIComponent(audioUrl)}`;
-
-// Now generate the QR code for the new audio player page
-const qrCode = await generateQRCode(audioPageUrl);
-
-// Return the QR code URL, image URL, and story
-res.status(200).json({ story: storyHtml, imageUrl, qrCodeUrl: qrCode, audioPageUrl });
-
+res.status(200).json({ story: storyHtml, imageUrl, audioUrl });
   } catch (error) {
+    console.error('Error occurred:', error);
     res.status(500).json({
       error: 'Failed to generate story, image, or audio narration.',
       details: error.response ? error.response.data : error.message,
