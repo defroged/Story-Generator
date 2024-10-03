@@ -222,18 +222,29 @@ async function extractTextFromImage(base64Image) {
 }
 
 async function generateAudioNarration(storyHtml) {
-  // Convert HTML to plain text
+  // Load the HTML and extract the text content, excluding the title
   const $ = load(storyHtml);
-  const textContent = $.text();
-
+  
+  // Extract the title separately
+  const storyTitle = $('title').text();
+  
+  // Remove the title from the rest of the HTML content
+  $('title').remove();
+  
+  // Get the remaining text content after removing the title
+  const textContent = $.text().trim();
+  
+  // Combine the title with the story content to ensure the title is only included once
+  const finalTextContent = `${storyTitle}\n${textContent}`;
+  
   const apiKey = process.env.ELEVENLABS_API_KEY;
-  const voiceId = process.env.ELEVENLABS_VOICE_ID || '9BWtsMINqrJLrRacOk9x'; 
+  const voiceId = process.env.ELEVENLABS_VOICE_ID || '9BWtsMINqrJLrRacOk9x';
 
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
 
   const requestBody = {
-    text: textContent,
-	model_id: 'eleven_multilingual_v2',
+    text: finalTextContent,
+    model_id: 'eleven_multilingual_v2',
     voice_settings: {
       stability: 0.30,
       similarity_boost: 0.80,
