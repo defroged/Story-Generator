@@ -246,15 +246,15 @@ async function generateAudioNarration(storyHtml) {
   const textContent = $.text();
 
   const apiKey = process.env.ELEVENLABS_API_KEY;
-  const voiceId = process.env.ELEVENLABS_VOICE_ID || 'N2lVS1w4EtoT3dr4eOWO'; 
+  const voiceId = process.env.ELEVENLABS_VOICE_ID || '9BWtsMINqrJLrRacOk9x'; 
 
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
 
   const requestBody = {
     text: textContent,
     voice_settings: {
-      stability: 0.75,
-      similarity_boost: 0.75,
+      stability: 0.30,
+      similarity_boost: 0.80,
     },
   };
 
