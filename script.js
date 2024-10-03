@@ -12,44 +12,61 @@ uploadInput.addEventListener('change', async () => {
     const file = uploadInput.files[0];
     if (file) {
         storyDiv.innerHTML = '';
-        loadingDiv.textContent = 'Generating story and image...';
+        loadingDiv.textContent = 'Extracting text from image...';
 
         try {
+            // Step 1: Convert image to base64
             const base64Image = await convertToBase64(file);
+            
+            // Show loading message for generating the story
+            loadingDiv.textContent = 'Generating story...';
             const result = await generateStory(base64Image, 'image/png'); // Set mimeType to 'image/png'
+            
+            // Clear loading message for story generation
             loadingDiv.textContent = '';
 
             storyDiv.innerHTML = result.story || '<p>No story generated.</p>';
 
             if (result.imageUrl) {
+                // Show loading message for image generation
+                loadingDiv.textContent = 'Generating image...';
+
                 const generatedImage = document.createElement('img');
                 generatedImage.src = result.imageUrl;
                 generatedImage.alt = 'Generated Image';
                 generatedImage.style.maxWidth = '100%';
                 generatedImage.style.marginTop = '20px';
                 storyDiv.appendChild(generatedImage);
+
+                // Clear loading message for image generation
+                loadingDiv.textContent = '';
             }
 
             if (result.audioUrl) {
-    const qrCodeDiv = document.createElement('div');
-    qrCodeDiv.id = 'qrcode';
-    qrCodeDiv.style.marginTop = '20px';
-    storyDiv.appendChild(qrCodeDiv);
+                // Show loading message for audio narration
+                loadingDiv.textContent = 'Generating audio narration...';
 
-    // Create the URL to the audio playback page with the audio URL as a query parameter
-    const playbackPageUrl = `${window.location.origin}/audio-player.html?audioUrl=${encodeURIComponent(result.audioUrl)}`;
+                const qrCodeDiv = document.createElement('div');
+                qrCodeDiv.id = 'qrcode';
+                qrCodeDiv.style.marginTop = '20px';
+                storyDiv.appendChild(qrCodeDiv);
 
-    new QRCode(qrCodeDiv, {
-        text: playbackPageUrl,  // Point the QR code to the playback page
-        width: 128,
-        height: 128,
-    });
+                const playbackPageUrl = `${window.location.origin}/audio-player.html?audioUrl=${encodeURIComponent(result.audioUrl)}`;
 
-    const qrLabel = document.createElement('p');
-    qrLabel.textContent = 'Scan to listen to the story with playback controls';
-    qrLabel.style.textAlign = 'center';
-    storyDiv.appendChild(qrLabel);
-}
+                new QRCode(qrCodeDiv, {
+                    text: playbackPageUrl,
+                    width: 128,
+                    height: 128,
+                });
+
+                const qrLabel = document.createElement('p');
+                qrLabel.textContent = 'Scan to listen to the story';
+                qrLabel.style.textAlign = 'center';
+                storyDiv.appendChild(qrLabel);
+
+                // Clear loading message after audio narration is ready
+                loadingDiv.textContent = '';
+            }
 
             const printButton = document.createElement('button');
             printButton.textContent = 'Print';
@@ -119,28 +136,28 @@ function convertToBase64(file) {
 }
 
 async function generateStory(base64Image, mimeType) {
-  try {
-    const response = await fetch('/api/generate-story', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ base64Image, mimeType }),
-    });
+    try {
+        const response = await fetch('/api/generate-story', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ base64Image, mimeType }),
+        });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Unknown error');
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Unknown error');
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('API Error:', error);
+        return {
+            story: 'An error occurred while generating the story.',
+            imageUrl: null,
+            audioUrl: null,
+        };
     }
-
-    const data = await response.json();
-    return data; 
-  } catch (error) {
-    console.error('API Error:', error);
-    return {
-      story: 'An error occurred while generating the story.',
-      imageUrl: null,
-      audioUrl: null,
-    };
-  }
 }
