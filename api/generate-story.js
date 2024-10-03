@@ -100,7 +100,7 @@ ${extractedText}
       },
       {
         role: 'user',
-        content: `Based on the following story, create a detailed and vivid description suitable for generating an image. Focus on positive, family-friendly elements, and avoid any disallowed content. The description should be less than 1000 characters. The desired image output should be simple without too many details in the background. IMPORTANT - There should be no text in the image!!!
+        content: `Based on the following story, create a detailed and vivid description suitable for generating a minimal image. The description should be less than 1000 characters.
 
 Story:
 ${storyText}`,
@@ -252,6 +252,7 @@ async function generateAudioNarration(storyHtml) {
 
   const requestBody = {
     text: textContent,
+	model_id: 'eleven_multilingual_v2',
     voice_settings: {
       stability: 0.30,
       similarity_boost: 0.80,
