@@ -1,6 +1,5 @@
 import OpenAI from 'openai';
 import axios from 'axios';
-import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { htmlToText } from 'html-to-text';
 import { load } from 'cheerio';
@@ -25,9 +24,7 @@ export default async function handler(req, res) {
     const { base64Image, mimeType } = req.body;
 
     if (!base64Image || !mimeType) {
-      res
-        .status(400)
-        .json({ error: 'Image file and MIME type are required.' });
+      res.status(400).json({ error: 'Image file and MIME type are required.' });
       return;
     }
 
@@ -75,9 +72,9 @@ Here is the text extracted from the image:
 ${extractedText}
 `;
 
-    // Step 3: Generate the story using OpenAI GPT-4
+    // Step 3: Generate the story using OpenAI gpt-4o
     const response = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 500,
       temperature: 0.7,
@@ -111,7 +108,7 @@ ${storyText}`,
     ];
 
     const promptResponse = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o',
       messages: imagePromptMessages,
       max_tokens: 150,
       temperature: 0.7,
@@ -168,7 +165,7 @@ ${storyText}`,
       throw new Error('Image generation failed.');
     }
 
-    // Generate audio narration
+    // Generate audio narration using ElevenLabs
     const audioUrl = await generateAudioNarration(storyHtml);
 
     res.status(200).json({ story: storyHtml, imageUrl, audioUrl });
@@ -244,59 +241,43 @@ async function extractTextFromImage(base64Image) {
 }
 
 async function generateAudioNarration(storyHtml) {
-  return new Promise((resolve, reject) => {
-    const speechConfig = sdk.SpeechConfig.fromSubscription(
-      process.env.AZURE_SPEECH_KEY,
-      process.env.AZURE_SPEECH_REGION
-    );
+  // Convert HTML to plain text
+  const $ = load(storyHtml);
+  const textContent = $.text();
 
-    speechConfig.speechSynthesisOutputFormat =
-      sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const voiceId = process.env.ELEVENLABS_VOICE_ID || 'N2lVS1w4EtoT3dr4eOWO'; 
 
-    const constructSSML = (inputHtml) => {
-      // Parse the input HTML to extract text content
-      const $ = load(inputHtml);
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
 
-      // Extract the text content from the HTML
-      const textContent = $.text();
+  const requestBody = {
+    text: textContent,
+    voice_settings: {
+      stability: 0.75,
+      similarity_boost: 0.75,
+    },
+  };
 
-      // Construct the SSML with a single voice and prosody
-      const ssml = `
-        <speak xmlns="http://www.w3.org/2001/10/synthesis"
-               xmlns:mstts="http://www.w3.org/2001/mstts"
-               xmlns:emo="http://www.w3.org/2009/10/emotionml"
-               version="1.0" xml:lang="de-DE">
-          <voice name="de-DE-SeraphinaMultilingualNeural">
-            <prosody rate="-20.00%" pitch="-10.00%">
-              ${textContent}
-            </prosody>
-          </voice>
-        </speak>`;
-      return ssml;
-    };
-
-    const ssml = constructSSML(storyHtml);
-
-    const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
-
-    synthesizer.speakSsmlAsync(
-      ssml,
-      async (result) => {
-        if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
-          const audioBuffer = result.audioData;
-          const audioUrl = await uploadAudioToStorage(audioBuffer);
-          resolve(audioUrl);
-        } else {
-          reject(result.errorDetails);
-        }
-        synthesizer.close();
+  try {
+    const response = await axios.post(url, requestBody, {
+      headers: {
+        'xi-api-key': apiKey,
+        'Content-Type': 'application/json',
       },
-      (error) => {
-        synthesizer.close();
-        reject(error);
-      }
+      responseType: 'arraybuffer', // Important to receive binary data
+    });
+
+    const audioBuffer = response.data;
+
+    // Upload the audio buffer to your storage
+    const audioUrl = await uploadAudioToStorage(audioBuffer);
+
+    return audioUrl;
+  } catch (error) {
+    throw new Error(
+      `Failed to generate audio narration: ${error.response ? error.response.data : error.message}`
     );
-  });
+  }
 }
 
 async function uploadAudioToStorage(audioBuffer) {
