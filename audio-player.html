@@ -6,8 +6,7 @@
     <title>Custom Audio Player</title>
     
     <!-- Load FontAwesome for icons -->
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-    
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>    
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -119,13 +118,13 @@
         <!-- Play/Pause and Control Buttons with FontAwesome Icons -->
         <div id="custom-player">
             <button class="btn" onclick="rewindAudio()">
-                <i class="fas fa-backward"></i>
+                <i class="fa-solid fa-backward"></i>
             </button>
             <button class="btn" id="play-pause-btn" onclick="togglePlay()">
-                <i class="fas fa-play"></i>
+                <i class="fa-solid fa-play"></i>
             </button>
             <button class="btn" onclick="skipAudio()">
-                <i class="fas fa-forward"></i>
+                <i class="fa-solid fa-forward"></i>
             </button>
         </div>
 
@@ -175,10 +174,10 @@
         function togglePlay() {
             if (audioPlayer.paused) {
                 audioPlayer.play();
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
             } else {
                 audioPlayer.pause();
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
             }
         }
 
