@@ -7,18 +7,44 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        #controls {
-            margin-top: 20px;
             display: flex;
-            flex-wrap: wrap;
+            justify-content: center;
             align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
         }
-        .speed-btn {
-            margin-right: 10px;
-            margin-bottom: 10px;
+
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        audio {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        #controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .control-btn {
             padding: 10px 15px;
             background-color: #007bff;
             color: white;
@@ -27,66 +53,73 @@
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        .speed-btn:hover {
+
+        .control-btn:hover {
             background-color: #0056b3;
         }
+
         .speed-display {
             font-size: 18px;
-            margin-left: 15px;
+            color: #555;
+            margin-top: 20px;
         }
-        /* Responsive improvements */
-        @media (max-width: 600px) {
-            #controls {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .speed-btn {
-                margin-bottom: 10px;
-                width: 100%;
-                text-align: center;
-            }
-            .speed-display {
-                margin-top: 10px;
-                margin-left: 0;
-            }
+
+        .rewind-skip-btn {
+            background-color: #6c757d;
         }
+
+        .rewind-skip-btn:hover {
+            background-color: #565e64;
+        }
+        
     </style>
 </head>
 <body>
 
-    <h2>Listen to the Story</h2>
+    <div class="container">
+        <h2>Listen to the Story</h2>
 
-    <audio id="audio-player" controls>
-        Your browser does not support the audio element.
-    </audio>
+        <audio id="audio-player" controls>
+            Your browser does not support the audio element.
+        </audio>
 
-    <div id="controls">
-        <button class="speed-btn" onclick="changeSpeed(1.0)">Normal (1x)</button>
-        <button class="speed-btn" onclick="changeSpeed(0.9)">0.90x</button>
-        <button class="speed-btn" onclick="changeSpeed(0.8)">0.80x</button>
-        <button class="speed-btn" onclick="changeSpeed(0.7)">0.70x</button>
-        <button class="speed-btn" onclick="changeSpeed(0.6)">0.60x</button>
-        <span class="speed-display">Speed: <span id="current-speed">1.0x</span></span>
+        <div id="controls">
+            <button class="control-btn rewind-skip-btn" onclick="rewindAudio()">Rewind 5s</button>
+            <button class="control-btn" onclick="changeSpeed(1.0)">Normal (100%)</button>
+            <button class="control-btn" onclick="changeSpeed(0.9)">90%</button>
+            <button class="control-btn" onclick="changeSpeed(0.8)">80%</button>
+            <button class="control-btn" onclick="changeSpeed(0.7)">70%</button>
+            <button class="control-btn rewind-skip-btn" onclick="skipAudio()">Skip 5s</button>
+        </div>
+
+        <div class="speed-display">Current Speed: <span id="current-speed">100%</span></div>
     </div>
 
     <script>
         // Get the URL parameter for the audio file
         const urlParams = new URLSearchParams(window.location.search);
         const audioUrl = urlParams.get('audioUrl');
+        const audioPlayer = document.getElementById('audio-player');
         
         if (audioUrl) {
-            const audioPlayer = document.getElementById('audio-player');
             audioPlayer.src = audioUrl;
         } else {
             alert("No audio URL provided.");
         }
 
         function changeSpeed(speed) {
-            var audioPlayer = document.getElementById("audio-player");
             audioPlayer.playbackRate = speed;
 
             // Update the displayed current speed
-            document.getElementById('current-speed').innerText = speed + 'x';
+            document.getElementById('current-speed').innerText = (speed * 100) + '%';
+        }
+
+        function rewindAudio() {
+            audioPlayer.currentTime -= 5;
+        }
+
+        function skipAudio() {
+            audioPlayer.currentTime += 5;
         }
     </script>
 

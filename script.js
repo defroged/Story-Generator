@@ -4,9 +4,14 @@ const uploadInput = document.getElementById('upload-input');
 const storyDiv = document.getElementById('story');
 const loadingDiv = document.getElementById('loading');
 
-// Sleep function to delay execution, allowing UI updates to happen
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+// Function to force UI update
+function updateLoadingMessage(message) {
+    return new Promise((resolve) => {
+        loadingDiv.textContent = message;
+        requestAnimationFrame(() => {
+            resolve();
+        });
+    });
 }
 
 captureBtn.addEventListener('click', () => {
@@ -17,50 +22,33 @@ uploadInput.addEventListener('change', async () => {
     const file = uploadInput.files[0];
     if (file) {
         storyDiv.innerHTML = '';
-        loadingDiv.textContent = 'Extracting text from image...';
-
+        
         try {
-            // Step 1: Convert image to base64
+            // Step 1: Extract text from the image
+            await updateLoadingMessage('Extracting text from image...');
             const base64Image = await convertToBase64(file);
 
-            // Force UI to update before proceeding
-            await sleep(100);  // Small delay to allow the message to render
-
-            // Show loading message for generating the story
-            loadingDiv.textContent = 'Generating story...';
-
+            // Step 2: Generate the story
+            await updateLoadingMessage('Generating story...');
             const result = await generateStory(base64Image, 'image/png'); // Set mimeType to 'image/png'
-
-            // Clear loading message for story generation
-            loadingDiv.textContent = '';
-
+            
+            // Display the story
             storyDiv.innerHTML = result.story || '<p>No story generated.</p>';
 
             if (result.imageUrl) {
-                // Force UI to update before proceeding
-                await sleep(100);  // Small delay to allow the message to render
-
-                // Show loading message for image generation
-                loadingDiv.textContent = 'Generating image...';
-
+                // Step 3: Generate the image
+                await updateLoadingMessage('Generating image...');
                 const generatedImage = document.createElement('img');
                 generatedImage.src = result.imageUrl;
                 generatedImage.alt = 'Generated Image';
                 generatedImage.style.maxWidth = '100%';
                 generatedImage.style.marginTop = '20px';
                 storyDiv.appendChild(generatedImage);
-
-                // Clear loading message for image generation
-                loadingDiv.textContent = '';
             }
 
             if (result.audioUrl) {
-                // Force UI to update before proceeding
-                await sleep(100);  // Small delay to allow the message to render
-
-                // Show loading message for audio narration
-                loadingDiv.textContent = 'Generating audio narration...';
-
+                // Step 4: Generate the audio narration
+                await updateLoadingMessage('Generating audio narration...');
                 const qrCodeDiv = document.createElement('div');
                 qrCodeDiv.id = 'qrcode';
                 qrCodeDiv.style.marginTop = '20px';
@@ -78,11 +66,12 @@ uploadInput.addEventListener('change', async () => {
                 qrLabel.textContent = 'Scan to listen to the story';
                 qrLabel.style.textAlign = 'center';
                 storyDiv.appendChild(qrLabel);
-
-                // Clear loading message after audio narration is ready
-                loadingDiv.textContent = '';
             }
 
+            // Clear loading message after all tasks are complete
+            loadingDiv.textContent = '';
+
+            // Add print button
             const printButton = document.createElement('button');
             printButton.textContent = 'Print';
             printButton.id = 'print-btn';
