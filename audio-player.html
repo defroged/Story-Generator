@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Playback</title>
+    <title>Custom Audio Player</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -31,45 +31,49 @@
             color: #333;
         }
 
-        audio {
-            width: 100%;
-            margin-bottom: 20px;
-        }
-
-        #controls {
+        #custom-player {
             display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 10px;
         }
 
-        .control-btn {
-            padding: 10px 15px;
+        .btn {
             background-color: #007bff;
             color: white;
             border: none;
             border-radius: 5px;
+            padding: 10px 15px;
             cursor: pointer;
             transition: background-color 0.3s;
         }
 
-        .control-btn:hover {
+        .btn:hover {
             background-color: #0056b3;
         }
 
+        .time {
+            font-size: 16px;
+            color: #333;
+        }
+
         .speed-display {
-            font-size: 18px;
+            font-size: 16px;
+            margin-left: 10px;
             color: #555;
-            margin-top: 20px;
         }
 
-        .rewind-skip-btn {
-            background-color: #6c757d;
+        input[type=range] {
+            width: 100px;
+            margin: 0 10px;
         }
-
-        .rewind-skip-btn:hover {
-            background-color: #565e64;
+        
+        #progress-bar {
+            width: 100%;
+            margin: 10px 0;
+            cursor: pointer;
         }
         
     </style>
@@ -79,27 +83,39 @@
     <div class="container">
         <h2>Listen to the Story</h2>
 
-        <audio id="audio-player" controls>
-            Your browser does not support the audio element.
-        </audio>
-
-        <div id="controls">
-            <button class="control-btn rewind-skip-btn" onclick="rewindAudio()">Rewind 5s</button>
-            <button class="control-btn" onclick="changeSpeed(1.0)">Normal (100%)</button>
-            <button class="control-btn" onclick="changeSpeed(0.9)">90%</button>
-            <button class="control-btn" onclick="changeSpeed(0.8)">80%</button>
-            <button class="control-btn" onclick="changeSpeed(0.7)">70%</button>
-            <button class="control-btn rewind-skip-btn" onclick="skipAudio()">Skip 5s</button>
+        <div id="custom-player">
+            <button class="btn" onclick="rewindAudio()">⏪ 5s</button>
+            <button class="btn" id="play-pause-btn" onclick="togglePlay()">▶️</button>
+            <button class="btn" onclick="skipAudio()">⏩ 5s</button>
+            <span class="time" id="current-time">00:00</span> / 
+            <span class="time" id="duration">00:00</span>
         </div>
 
-        <div class="speed-display">Current Speed: <span id="current-speed">100%</span></div>
+        <input type="range" id="progress-bar" value="0" step="0.01" max="1">
+
+        <div id="controls">
+            <button class="btn" onclick="changeSpeed(1.0)">100%</button>
+            <button class="btn" onclick="changeSpeed(0.9)">90%</button>
+            <button class="btn" onclick="changeSpeed(0.8)">80%</button>
+            <button class="btn" onclick="changeSpeed(0.7)">70%</button>
+            <span class="speed-display">Speed: <span id="current-speed">100%</span></span>
+        </div>
     </div>
 
+    <audio id="audio-player">
+        Your browser does not support the audio element.
+    </audio>
+
     <script>
+        const audioPlayer = document.getElementById('audio-player');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const currentTimeElem = document.getElementById('current-time');
+        const durationElem = document.getElementById('duration');
+        const progressBar = document.getElementById('progress-bar');
+
         // Get the URL parameter for the audio file
         const urlParams = new URLSearchParams(window.location.search);
         const audioUrl = urlParams.get('audioUrl');
-        const audioPlayer = document.getElementById('audio-player');
         
         if (audioUrl) {
             audioPlayer.src = audioUrl;
@@ -107,20 +123,59 @@
             alert("No audio URL provided.");
         }
 
-        function changeSpeed(speed) {
-            audioPlayer.playbackRate = speed;
-
-            // Update the displayed current speed
-            document.getElementById('current-speed').innerText = (speed * 100) + '%';
+        // Play and pause the audio
+        function togglePlay() {
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                playPauseBtn.innerHTML = "⏸️";
+            } else {
+                audioPlayer.pause();
+                playPauseBtn.innerHTML = "▶️";
+            }
         }
 
+        // Rewind the audio by 5 seconds
         function rewindAudio() {
             audioPlayer.currentTime -= 5;
         }
 
+        // Skip the audio by 5 seconds
         function skipAudio() {
             audioPlayer.currentTime += 5;
         }
+
+        // Update the audio playback speed
+        function changeSpeed(speed) {
+            audioPlayer.playbackRate = speed;
+            document.getElementById('current-speed').innerText = (speed * 100) + '%';
+        }
+
+        // Update current time and duration
+        audioPlayer.addEventListener('timeupdate', () => {
+            const minutes = Math.floor(audioPlayer.currentTime / 60);
+            const seconds = Math.floor(audioPlayer.currentTime % 60);
+            currentTimeElem.textContent = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+
+            const durationMinutes = Math.floor(audioPlayer.duration / 60);
+            const durationSeconds = Math.floor(audioPlayer.duration % 60);
+            durationElem.textContent = `${durationMinutes}:${durationSeconds < 10 ? '0' + durationSeconds : durationSeconds}`;
+
+            // Update progress bar
+            progressBar.value = audioPlayer.currentTime / audioPlayer.duration;
+        });
+
+        // Seek the audio when progress bar is clicked
+        progressBar.addEventListener('input', (e) => {
+            audioPlayer.currentTime = e.target.value * audioPlayer.duration;
+        });
+
+        // Update the duration once metadata is loaded
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            const minutes = Math.floor(audioPlayer.duration / 60);
+            const seconds = Math.floor(audioPlayer.duration % 60);
+            durationElem.textContent = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+        });
+
     </script>
 
 </body>
