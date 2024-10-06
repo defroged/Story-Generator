@@ -42,9 +42,9 @@ console.log('Starting text extraction from image');
 Write a short story based on the details found in the text below. Please generate the story in HTML. Provide only the HTML code without any Markdown formatting or code block delimiters.
 Follow these guidelines for writing the story:
 
-1. **Vocabulary and Grammar**: 
+1. **Vocabulary, Grammar and Sentence Patterns**: 
    - Use as many words as possible from the vocabulary list.
-   - Construct your sentences using ONLY the grammar points listed. Do not use any other grammar!!! Avoid using any grammar that is more advanced than those provided.
+   - Construct your sentences using ONLY the grammar points listed. Do not use any other grammar!!! Avoid using any grammar that is more advanced than those provided. Use the sentence patterns to construct sentences that are in the same pattern.
 
 2. **Word Limit**:
    - Adjust the length of the story according to the "Student level" indicated:
