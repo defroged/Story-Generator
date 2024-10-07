@@ -43,7 +43,7 @@ Write a short story based on the details found in the text below. Please generat
 Follow these guidelines for writing the story:
 
 1. **Vocabulary, Grammar and Sentence Patterns**: 
-   - Use as many words as possible from the vocabulary list.
+   - Use as many words as possible from the vocabulary list, but don't force it if it will make the story go off topic.
    - Construct your sentences using ONLY the grammar points listed. Do not use any other grammar!!! Avoid using any grammar that is more advanced than those provided. Use the sentence patterns to construct sentences that are in the same pattern.
 
 2. **Word Limit**:
@@ -53,7 +53,7 @@ Follow these guidelines for writing the story:
      - For "Level 3 - Hard": Write no more than 400 words, but not less than 300. Use simple English aimed at young ESL learners.
 
 3. **Story Details**: 
-   - On the right side of the page, you'll find the student's ideas for the story, including the time, place, characters, and plot, under the headings “who,” “where,” “when,” and “other details.”
+   - After where it says "The story is about ...", and "The story takes place in ...", you'll find the student's ideas for the story, including the time, place, and characters. Please give this part the upmost importance when constructing the story.
    - If any of these fields are incomplete or missing, feel free to fill in the gaps creatively.
 
 4. **Following the story map**:
