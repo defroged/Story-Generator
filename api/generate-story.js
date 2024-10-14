@@ -39,15 +39,15 @@ console.log('Starting text extraction from image');
 
     // Step 2: Construct the prompt using the extracted text
     const prompt = `
-Write a short story based on the details found in the text below. Please generate the story in HTML. Provide only the HTML code without any Markdown formatting or code block delimiters.
+Write a short story in the style of the author Kelly Yang, based on the details found in the text below. Please generate the story in HTML. Provide only the HTML code without any Markdown formatting or code block delimiters.
 Follow these guidelines for writing the story:
 
 1. **Vocabulary, Grammar and Sentence Patterns**: 
    - Use as many words as possible from the vocabulary list, but don't force it if it will make the story go off topic.
    - Construct your sentences using ONLY the grammar points listed. Do not use any other grammar!!! Avoid using any grammar that is more advanced than those provided. Use the sentence patterns to construct sentences that are in the same pattern.
 
-2. **Word Limit**:
-   - Adjust the length of the story according to the "Student level" indicated:
+2. **Word Limit and difficulty**:
+   - Adjust the length and difficulty of the story according to the "Student level" indicated:
      - For "Level 1 - Easy": Limit the story to 150 words, but not less than 100. Use very simple English aimed at young ESL learners.
      - For "Level 2 - Medium": Write up to 250 words, but not less than 180. Use very simple English aimed at young ESL learners.
      - For "Level 3 - Hard": Write no more than 400 words, but not less than 300. Use simple English aimed at young ESL learners.
@@ -63,7 +63,8 @@ Follow these guidelines for writing the story:
      c) Climax
      d) Resolution
 
-5. Try to make the story exciting with some elements of surprise. Use humour in the story and try to make the reader laugh if the general theme of the story permits it.
+5. Even though the story is aimed at junior high school students, try not to make it too simple and boring, and try to make the story exciting with some elements of surprise.
+		Don't force the words from the vocabulary list, and focus more on making the story engaging. 
 
 6. **Creating a title**:
    - After completing the story, think of an appropriate title for the story, and add it to your output as <title>.
