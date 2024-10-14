@@ -254,7 +254,7 @@ async function generateAudioNarration(storyHtml) {
   const finalTextContent = `${storyTitle}\n${textContent}`;
 
   const apiKey = process.env.ELEVENLABS_API_KEY;
-  const voiceId = process.env.ELEVENLABS_VOICE_ID || '9MkKhy7tpXju7BilX1p8'; 
+  const voiceId = process.env.ELEVENLABS_VOICE_ID || 'nPczCjzI2devNBz1zQrb'; 
 
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
 
