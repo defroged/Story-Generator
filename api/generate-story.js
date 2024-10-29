@@ -42,8 +42,8 @@ console.log('Starting text extraction from image');
 Write a short story in the style of the author Kelly Yang, based on the details found in the text below. Please generate the story in HTML. Provide only the HTML code without any Markdown formatting or code block delimiters.
 Follow these guidelines for writing the story:
 
-1. **Vocabulary, Grammar and Sentence Patterns**: 
-   - Use as many words as possible from the vocabulary list, but don't force it if it will make the story go off topic.
+1. **Vocabulary, Phrases and Grammar**: 
+   - Use as many words and phrases as possible from the vocabulary list, but don't force it if it will make the story go off topic.
    - Construct your sentences using ONLY the grammar points listed. Do not use any other grammar!!! Avoid using any grammar that is more advanced than those provided. Use the sentence patterns to construct sentences that are in the same pattern.
 
 2. **Word Limit and difficulty**:
