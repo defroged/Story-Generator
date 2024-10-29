@@ -65,8 +65,10 @@ Follow these guidelines for writing the story:
 
 5. Even though the story is aimed at junior high school students, try not to make it too simple and boring, and try to make the story exciting with some elements of surprise.
 		Don't force the words from the vocabulary list, and focus more on making the story engaging. 
+		
+6. Even though there might be Japanese written in the text, do not add Japanese to the story. Use only English. If a character name is written in Japanese, write the same name in English alphabet.
 
-6. **Creating a title**:
+7. **Creating a title**:
    - After completing the story, think of an appropriate title for the story, and add it to your output as <title>.
 
 Here is the text extracted from the image:
